@@ -1,0 +1,17 @@
+﻿<Solution>
+  <Folder Name="/Solution/">
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+    <File Path="version.json" />
+    <File Path=".github\FUNDING.yml" />
+    <File Path=".github\PULL_REQUEST_TEMPLATE.md" />
+    <File Path=".github\ISSUE_TEMPLATE\bug_report.yml" />
+    <File Path=".github\ISSUE_TEMPLATE\config.yml" />
+    <File Path=".github\ISSUE_TEMPLATE\feature_request.yml" />
+    <File Path=".github\workflows\build.yml" />
+  </Folder>
+  <Project Path="Samples\Samples.csproj" Type="Classic C#" />
+  <Project Path="Shiny.Reflector.SourceGenerators\Shiny.Reflector.SourceGenerators.csproj" Type="Classic C#" />
+  <Project Path="Shiny.Reflector.Tests\Shiny.Reflector.Tests.csproj" Type="Classic C#" />
+  <Project Path="Shiny.Reflector\Shiny.Reflector.csproj" Type="Classic C#" />
+</Solution>
