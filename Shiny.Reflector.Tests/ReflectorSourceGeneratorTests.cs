@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using System.Reflection;
 
 namespace Shiny.Reflector.Tests;
@@ -270,9 +271,144 @@ public class ReflectorSourceGeneratorTests
 
         return Verify(Generate(source));
     }
-    
-    
-    GeneratorDriverRunResult Generate(string source)
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithShinyReflectorExtensionsNamespace()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Extensions"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithRootNamespaceFallback()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.RootNamespace"] = "MyApp"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithGlobalNamespaceFallback()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        // No MSBuild properties provided, should fallback to "global"
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithShinyNamespacePriority()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        // Both properties provided - ShinyReflectorExtensionsNamespace should take priority
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Reflection",
+            ["build_property.RootNamespace"] = "MyApp"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithMultipleClassesInCustomNamespace()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace FirstNamespace
+            {
+                [Reflector]
+                public class FirstClass
+                {
+                    public string Name { get; set; }
+                }
+            }
+
+            namespace SecondNamespace
+            {
+                [Reflector]
+                public class SecondClass
+                {
+                    public int Value { get; set; }
+                }
+            }
+            """;
+
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.ShinyReflectorExtensionsNamespace"] = "Common.Extensions"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
+    GeneratorDriverRunResult Generate(string source, Dictionary<string, string>? analyzerConfigOptions = null)
     {
         // Parse the source code
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
@@ -310,10 +446,49 @@ public class ReflectorSourceGeneratorTests
         var generator = new ReflectorSourceGenerator();
         var driver = CSharpGeneratorDriver.Create(generator);
         
+        // Add analyzer config options if provided
+        if (analyzerConfigOptions != null)
+        {
+            var optionsProvider = new TestAnalyzerConfigOptionsProvider(analyzerConfigOptions);
+            driver = (CSharpGeneratorDriver)driver.WithUpdatedAnalyzerConfigOptions(optionsProvider);
+        }
+        
         // Run the generators
         var genResult = driver.RunGenerators(compilation);
         var runResult = genResult.GetRunResult();
 
         return runResult;
+    }
+}
+
+// Test helper class to simulate MSBuild properties
+public class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+{
+    private readonly TestAnalyzerConfigOptions _globalOptions;
+
+    public TestAnalyzerConfigOptionsProvider(Dictionary<string, string> globalOptions)
+    {
+        _globalOptions = new TestAnalyzerConfigOptions(globalOptions);
+    }
+
+    public override AnalyzerConfigOptions GlobalOptions => _globalOptions;
+
+    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => _globalOptions;
+
+    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => _globalOptions;
+}
+
+public class TestAnalyzerConfigOptions : AnalyzerConfigOptions
+{
+    private readonly Dictionary<string, string> _options;
+
+    public TestAnalyzerConfigOptions(Dictionary<string, string> options)
+    {
+        _options = options;
+    }
+
+    public override bool TryGetValue(string key, out string value)
+    {
+        return _options.TryGetValue(key, out value!);
     }
 }

@@ -1,8 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
+using System.Linq;
 
 namespace Shiny.Reflector;
 
@@ -20,13 +23,15 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             )
             .Where(static m => m is not null);
 
-        // Combine with compilation to get type information
-        var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
+        // Combine with compilation and analyzer config options to get type information and MSBuild properties
+        var compilationAndClassesAndOptions = context.CompilationProvider
+            .Combine(classDeclarations.Collect())
+            .Combine(context.AnalyzerConfigOptionsProvider);
 
         // Generate the source code
         context.RegisterSourceOutput(
-            compilationAndClasses, 
-            static (spc, source) => Execute(source.Left, source.Right, spc)
+            compilationAndClassesAndOptions, 
+            static (spc, source) => Execute(source.Left.Left, source.Left.Right, source.Right, spc)
         );
     }
 
@@ -58,15 +63,15 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         return null;
     }
 
-    static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, SourceProductionContext context)
+    static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, AnalyzerConfigOptionsProvider optionsProvider, SourceProductionContext context)
     {
         if (classes.IsDefaultOrEmpty)
             return;
 
         var distinctClasses = classes.Where(x => x is not null).Distinct();
         
-        // Group classes by namespace for generating ReflectorExtensions
-        var classesByNamespace = new Dictionary<string, List<ClassInfo>>();
+        // Collect all classes for generating a single ReflectorExtensions
+        var allClasses = new List<ClassInfo>();
 
         foreach (var classDeclaration in distinctClasses)
         {
@@ -78,22 +83,45 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
             var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
             
-            if (!classesByNamespace.ContainsKey(namespaceName))
-                classesByNamespace[namespaceName] = new List<ClassInfo>();
-
             var properties = GetProperties(classSymbol);
             var classInfo = new ClassInfo(classSymbol.Name, namespaceName, classSymbol.ToDisplayString(), properties);
-            classesByNamespace[namespaceName].Add(classInfo);
+            allClasses.Add(classInfo);
 
             // Generate reflector class for this class
             GenerateReflectorClass(context, classInfo);
         }
 
-        // Generate ReflectorExtensions for each namespace
-        foreach (var kvp in classesByNamespace)
+        // Get the namespace for ReflectorExtensions from MSBuild properties
+        var extensionsNamespace = GetReflectorExtensionsNamespace(optionsProvider);
+
+        // Generate a single ReflectorExtensions class with all classes
+        if (allClasses.Count > 0)
         {
-            GenerateReflectorExtensions(context, kvp.Key, kvp.Value);
+            GenerateReflectorExtensions(context, extensionsNamespace, allClasses);
         }
+    }
+
+    static string GetReflectorExtensionsNamespace(AnalyzerConfigOptionsProvider optionsProvider)
+    {
+        // Try to get global options first
+        var globalOptions = optionsProvider.GlobalOptions;
+        
+        // Check for ShinyReflectorExtensionsNamespace first
+        if (globalOptions.TryGetValue("build_property.ShinyReflectorExtensionsNamespace", out var shinyNamespace) && 
+            !string.IsNullOrWhiteSpace(shinyNamespace))
+        {
+            return shinyNamespace;
+        }
+        
+        // Fallback to RootNamespace
+        if (globalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace) && 
+            !string.IsNullOrWhiteSpace(rootNamespace))
+        {
+            return rootNamespace;
+        }
+        
+        // Final fallback to global namespace
+        return "global";
     }
 
     static List<PropertyInfo> GetProperties(INamedTypeSymbol classSymbol)

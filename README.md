@@ -3,8 +3,6 @@
 Reflection without the actual... reflection.  AOT compliant!
 
 ## TODO
-* Extension method for GetReflector() should exist in namespace defined within csproj `<ShinyReflectorNamespace>MyNamespace (or rootnamespace?)</ShinyReflectorNamespace>`
-* GetReflector should return null if a reflector is not available for the type
 * What attributes on properties and/or class
 
 ## Usage
@@ -49,4 +47,19 @@ reflector.SetValue("Age", 99);
 reflector["name"] = "Something Else";
 Console.WriteLine("Reflector Name Value: " + reflector["NaMe"]);
 Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
+```
+
+### Put ReflectionExtensions (the thing that let's you get the reflector) in a separate assembly
+
+```
+<PropertyGroup>
+    <ShinyReflectorNamespace>MyNamespace</ShinyReflectorNamespace>
+    
+    OR
+    
+    <RootNamespace>MyNamespace</RootNamespace>
+    
+    OTHERWISE
+    global namespace (no namespace)
+</PropertyGroup>
 ```
