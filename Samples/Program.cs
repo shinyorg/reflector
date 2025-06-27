@@ -1,4 +1,5 @@
 ﻿using Samples;
+using Shiny.Reflector;
 
 var myClass = new MySampleClass
 {
@@ -11,6 +12,10 @@ foreach (var prop in reflector.Properties)
     var objValue = reflector[prop.Name];
     Console.WriteLine($"Property: {prop.Name} ({prop.Type}) - Current Value: {objValue}");
 }
+
+Console.WriteLine("Has Rando Property: " + reflector.HasProperty("asdfasdfasdf"));
+Console.WriteLine("Try Get Rando Property: " + reflector.TryGetValue("asdfasdfasdf", out var randoValue));
+Console.WriteLine("Try Set Rando Property: " + reflector.TrySetValue("asdfasdfasdf", "Hello World"));
 
 // generics for type casting
 var name = reflector.GetValue<string>("Name");
