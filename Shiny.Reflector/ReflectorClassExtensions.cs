@@ -1,0 +1,110 @@
+namespace Shiny.Reflector;
+
+
+public static class ReflectorClassExtensions
+{
+    
+    /// <summary>
+    /// Tries to get the property information for a given property name.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="propertyName"></param>
+    /// <returns></returns>
+    public static PropertyGeneratedInfo? TryGetPropertyInfo(this IReflectorClass @this, string propertyName) =>
+        @this
+            .Properties
+            .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+    
+    /// <summary>
+    /// Checks if the class has a property with the specified name.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="propertyName"></param>
+    /// <returns></returns>
+    public static bool HasProperty(this IReflectorClass @this, string propertyName) 
+        => @this.Properties.Any(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+
+
+    /// <summary>
+    /// Tries to get the value of a property.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="propertyName"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public static bool TryGetValue(this IReflectorClass @this, string propertyName, out object? value)
+    {
+        if (@this.HasProperty(propertyName))
+        {
+            value = @this[propertyName];
+            return true;
+        }
+        value = null;
+        return false;
+    }
+
+    
+    /// <summary>
+    /// Tries to set the value of a property.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="propertyName"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public static bool TrySetValue(this IReflectorClass @this, string propertyName, object value)
+    {
+        if (@this.HasProperty(propertyName))
+        {
+            // TODO: validate the type if necessary
+            @this[propertyName] = value;
+            return true;
+        }
+        return false;
+    }
+    
+    
+    /// <summary>
+    /// Tries to get the value of a property as a specific type.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="propertyName"></param>
+    /// <param name="value"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static bool TryGetValue<T>(this IReflectorClass @this, string propertyName, out T value)
+    {
+        var result = false;
+        value = default;
+        
+        if (@this.HasProperty(propertyName))
+        {
+            var objValue = @this[propertyName];
+            if (objValue is T tValue)
+            {
+                value = tValue;
+                result = true;
+            }
+        }
+        
+        return result;
+    }
+
+    
+    /// <summary>
+    /// Tries to set the value of a property as a specific type.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="propertyName"></param>
+    /// <param name="value"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static bool TrySetValue<T>(this IReflectorClass @this, string propertyName, T value)
+    {
+        var result = false;
+        var property = @this.TryGetPropertyInfo(propertyName);
+        if (property is { HasSetter: true } && typeof(T).IsAssignableTo(property.Type))
+            @this[propertyName] = value;
+
+        return result;
+    }
+}

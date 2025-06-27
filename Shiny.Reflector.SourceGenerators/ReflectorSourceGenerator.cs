@@ -1,13 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
 
 namespace Shiny.Reflector;
+
 
 [Generator(LanguageNames.CSharp)]
 public class ReflectorSourceGenerator : IIncrementalGenerator
@@ -18,21 +16,22 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
-                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx)
+            )
             .Where(static m => m is not null);
 
         // Combine with compilation to get type information
         var compilationAndClasses = context.CompilationProvider.Combine(classDeclarations.Collect());
 
         // Generate the source code
-        context.RegisterSourceOutput(compilationAndClasses, 
-            static (spc, source) => Execute(source.Left, source.Right, spc));
+        context.RegisterSourceOutput(
+            compilationAndClasses, 
+            static (spc, source) => Execute(source.Left, source.Right, spc)
+        );
     }
 
     static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-    {
-        return node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0;
-    }
+        => node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0;
 
     static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
@@ -138,7 +137,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         sb.AppendLine("        _reflectedObject = reflectedObject;");
         sb.AppendLine("    }");
         sb.AppendLine();
-        sb.AppendLine($"    public object ReflectedObject => _reflectedObject;");
+        sb.AppendLine("    public object ReflectedObject => _reflectedObject;");
         sb.AppendLine();
 
         // Generate Properties array
@@ -251,7 +250,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
         sb.AppendLine("public static class ReflectorExtensions");
         sb.AppendLine("{");
-        sb.AppendLine("    public static global::Shiny.Reflector.IReflectorClass GetReflector(this object obj)");
+        sb.AppendLine("    public static global::Shiny.Reflector.IReflectorClass? GetReflector(this object obj)");
         sb.AppendLine("    {");
 
         foreach (var classInfo in classes)
@@ -262,7 +261,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             sb.AppendLine();
         }
 
-        sb.AppendLine("        throw new global::System.InvalidOperationException(\"Cannot get reflector for object of type \" + obj.GetType().FullName);");
+        sb.AppendLine("        return null;");
         sb.AppendLine("    }");
         sb.AppendLine("}");
 

@@ -2,6 +2,11 @@
 
 Reflection without the actual... reflection.  AOT compliant!
 
+## TODO
+* Extension method for GetReflector() should exist in namespace defined within csproj `<ShinyReflectorNamespace>MyNamespace (or rootnamespace?)</ShinyReflectorNamespace>`
+* GetReflector should return null if a reflector is not available for the type
+* What attributes on properties and/or class
+
 ## Usage
 
 ```csharp

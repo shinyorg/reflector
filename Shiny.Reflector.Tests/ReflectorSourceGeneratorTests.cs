@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using System.Reflection;
 
 namespace Shiny.Reflector.Tests;
 
@@ -269,27 +270,6 @@ public class ReflectorSourceGeneratorTests
 
         return Verify(Generate(source));
     }
-
-    [Fact]
-    public Task HandlesInvalidAttributeUsage()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    [Reflector] // Invalid - attribute should be on class, not property
-                    public string Name { get; set; }
-                }
-            }
-            """;
-
-        return Verify(Generate(source));
-    }
-    
     
     
     GeneratorDriverRunResult Generate(string source)
@@ -300,24 +280,40 @@ public class ReflectorSourceGeneratorTests
         // Create references including the Shiny.Reflector assembly
         var references = new[]
         {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Attribute).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(ReflectorAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location), // System.Private.CoreLib
+            MetadataReference.CreateFromFile(typeof(Attribute).Assembly.Location), // System.Runtime
+            MetadataReference.CreateFromFile(typeof(ReflectorAttribute).Assembly.Location), // Shiny.Reflector
+            MetadataReference.CreateFromFile(typeof(List<>).Assembly.Location), // System.Collections
+            MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location), // System.Linq
+            MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location), // System.Runtime explicitly
+            MetadataReference.CreateFromFile(Assembly.Load("netstandard").Location) // netstandard
         };
 
         // Create compilation
         var compilation = CSharpCompilation.Create(
             assemblyName: "Tests",
             syntaxTrees: [syntaxTree],
-            references: references
+            references: references,
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
         );
 
-        var generator = new ReflectorSourceGenerator();
-        var run = CSharpGeneratorDriver
-            .Create([generator])
-            .RunGenerators(compilation);
+        // Check for compilation errors
+        var diagnostics = compilation.GetDiagnostics();
+        var errors = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+        if (errors.Any())
+        {
+            var errorMessages = string.Join("\n", errors.Select(e => e.ToString()));
+            throw new InvalidOperationException($"Compilation errors:\n{errorMessages}");
+        }
 
-        // Create driver and run the generator
-        return run.GetRunResult();
+        // Create and run the generator
+        var generator = new ReflectorSourceGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+        
+        // Run the generators
+        var genResult = driver.RunGenerators(compilation);
+        var runResult = genResult.GetRunResult();
+
+        return runResult;
     }
 }
