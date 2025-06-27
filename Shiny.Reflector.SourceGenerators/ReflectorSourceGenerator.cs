@@ -156,7 +156,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         // Generate GetValue<T> method
         sb.AppendLine("    public T? GetValue<T>(string key)");
         sb.AppendLine("    {");
-        sb.AppendLine("        var value = this.GetValue(key);");
+        sb.AppendLine("        var value = this[key];");
         sb.AppendLine("        if (value == null)");
         sb.AppendLine("            return default(T);");
         sb.AppendLine();
@@ -164,18 +164,59 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         sb.AppendLine("    }");
         sb.AppendLine();
 
-        // Generate GetValue method
-        sb.AppendLine("    public object? GetValue(string key)");
+        // Generate indexer
+        var settableProps = classInfo.Properties.Where(p => p.HasSetter).ToList();
+        sb.AppendLine("    public object? this[string key]");
         sb.AppendLine("    {");
-        sb.AppendLine("        switch (key?.ToLower())");
+        sb.AppendLine("        get");
         sb.AppendLine("        {");
+        sb.AppendLine("            switch (key?.ToLower())");
+        sb.AppendLine("            {");
         foreach (var prop in classInfo.Properties)
         {
-            sb.AppendLine($"            case \"{prop.Name.ToLower()}\":");
-            sb.AppendLine($"                return _reflectedObject.{prop.Name};");
+            sb.AppendLine($"                case \"{prop.Name.ToLower()}\":");
+            sb.AppendLine($"                    return _reflectedObject.{prop.Name};");
         }
-        sb.AppendLine("            default:");
-        sb.AppendLine($"                throw new global::System.InvalidOperationException($\"Cannot get value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
+        sb.AppendLine("                default:");
+        sb.AppendLine($"                    throw new global::System.InvalidOperationException($\"Cannot get value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
+        sb.AppendLine("            }");
+        sb.AppendLine("        }");
+        sb.AppendLine("        set");
+        sb.AppendLine("        {");
+        if (settableProps.Count > 0)
+        {
+            sb.AppendLine("            switch (key?.ToLower())");
+            sb.AppendLine("            {");
+            foreach (var prop in settableProps)
+            {
+                sb.AppendLine($"                case \"{prop.Name.ToLower()}\":");
+                // Special handling for nullable value types
+                if (prop.TypeName.Contains("?") && !prop.TypeName.StartsWith("string"))
+                {
+                    var underlyingType = prop.TypeName.Replace("?", "");
+                    sb.AppendLine($"                    if (value != null && value is not {underlyingType})");
+                    sb.AppendLine($"                        throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector. Expected a {prop.TypeName} value.\");");
+                    sb.AppendLine();
+                    sb.AppendLine($"                    _reflectedObject.{prop.Name} = ({prop.TypeName})value;");
+                }
+                else
+                {
+                    sb.AppendLine($"                    if (value is not null and not {prop.TypeName})");
+                    sb.AppendLine($"                        throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector. Expected a {prop.TypeName} value.\");");
+                    sb.AppendLine();
+                    sb.AppendLine($"                    _reflectedObject.{prop.Name} = ({prop.TypeName})value;");
+                }
+                sb.AppendLine("                    break;");
+                sb.AppendLine();
+            }
+            sb.AppendLine("                default:");
+            sb.AppendLine($"                    throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
+            sb.AppendLine("            }");
+        }
+        else
+        {
+            sb.AppendLine($"            throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
+        }
         sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
@@ -183,78 +224,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         // Generate SetValue<T> method
         sb.AppendLine("    public void SetValue<T>(string key, T? value)");
         sb.AppendLine("    {");
-        var settableProps = classInfo.Properties.Where(p => p.HasSetter).ToList();
-        if (settableProps.Count > 0)
-        {
-            sb.AppendLine("        switch (key?.ToLower())");
-            sb.AppendLine("        {");
-            foreach (var prop in settableProps)
-            {
-                sb.AppendLine($"            case \"{prop.Name.ToLower()}\":");
-                
-                // Handle nullable types properly
-                var underlyingType = prop.TypeName.Replace("?", "");
-                var isNullable = prop.TypeName.Contains("?");
-                
-                if (isNullable)
-                {
-                    sb.AppendLine($"                if (value != null && value is not {underlyingType})");
-                    sb.AppendLine($"                    throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector. Expected a {prop.TypeName} value.\");");
-                    sb.AppendLine();
-                    sb.AppendLine($"                _reflectedObject.{prop.Name} = ({prop.TypeName})(object?)value;");
-                }
-                else
-                {
-                    sb.AppendLine($"                if (value is not {prop.TypeName})");
-                    sb.AppendLine($"                    throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector. Expected a {prop.TypeName} value.\");");
-                    sb.AppendLine();
-                    sb.AppendLine($"                _reflectedObject.{prop.Name} = ({prop.TypeName})(object)value!;");
-                }
-                sb.AppendLine("                break;");
-                sb.AppendLine();
-            }
-            sb.AppendLine("            default:");
-            sb.AppendLine($"                throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
-            sb.AppendLine("        }");
-        }
-        else
-        {
-            sb.AppendLine($"        throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
-        }
-        sb.AppendLine("    }");
-        sb.AppendLine();
-
-        // Generate SetValue method
-        sb.AppendLine("    public void SetValue(string key, object? value)");
-        sb.AppendLine("    {");
-        if (settableProps.Count > 0)
-        {
-            sb.AppendLine("        switch (key?.ToLower())");
-            sb.AppendLine("        {");
-            foreach (var prop in settableProps)
-            {
-                sb.AppendLine($"            case \"{prop.Name.ToLower()}\":");
-                // Special handling for nullable value types
-                if (prop.TypeName.Contains("?") && !prop.TypeName.StartsWith("string"))
-                {
-                    var underlyingType = prop.TypeName.Replace("?", "");
-                    sb.AppendLine($"                this.SetValue<{prop.TypeName}>(key, value as {prop.TypeName});");
-                }
-                else
-                {
-                    sb.AppendLine($"                this.SetValue<{prop.TypeName}>(key, ({prop.TypeName}?)value);");
-                }
-                sb.AppendLine("                break;");
-                sb.AppendLine();
-            }
-            sb.AppendLine("            default:");
-            sb.AppendLine($"                throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
-            sb.AppendLine("        }");
-        }
-        else
-        {
-            sb.AppendLine($"        throw new global::System.InvalidOperationException($\"Cannot set value for key '{{key}}' in {classInfo.ClassName}Reflector\");");
-        }
+        sb.AppendLine("        this[key] = value;");
         sb.AppendLine("    }");
         sb.AppendLine("}");
 

@@ -24,19 +24,24 @@ var myClass = new MySampleClass
 
 // NOTE: the use of GetReflector - a reflector class is generated for each class marked with the ReflectorAttribute
 var reflector = myClass.GetReflector();
-
 foreach (var prop in reflector.Properties) 
 {
-    Console.WriteLine($"{prop.Name} ({prop.Type.Name})");
+    var objValue = reflector[prop.Name];
+    Console.WriteLine($"Property: {prop.Name} ({prop.Type}) - Current Value: {objValue}");
 }
 
+// generics for type casting
 var name = reflector.GetValue<string>("Name");
 Console.WriteLine("Reflector Name: " + name);
 
-var age = reflector.GetValue<int?>("age");
-Console.WriteLine("Reflector Value: " + age);
+// indexers for loose typing
+Console.WriteLine("Reflector Value: " + reflector["age"]);
 
+// set with generics
 reflector.SetValue("Age", 99);
-age = reflector.GetValue<int?>("age");
-Console.WriteLine("Reflector Value: " + age);
+
+// or just an object on the indexer
+reflector["name"] = "Something Else";
+Console.WriteLine("Reflector Name Value: " + reflector["NaMe"]);
+Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
 ```

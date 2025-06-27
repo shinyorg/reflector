@@ -9,6 +9,5 @@ public interface IReflectorClass
     T? GetValue<T>(string key);
     void SetValue<T>(string key, T? value);
         
-    object? GetValue(string key);
-    void SetValue(string key, object? value);
+    object? this[string key] { get; set; }
 }
