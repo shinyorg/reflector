@@ -2,9 +2,6 @@
 
 Reflection without the actual... reflection.  AOT compliant!
 
-## TODO
-* What attributes on properties and/or class
-
 ## Usage
 
 ```csharp
