@@ -13,4 +13,6 @@
                           ReferenceOutputAssembly="False" />
         <ProjectReference Include="..\Shiny.Reflector\Shiny.Reflector.csproj" />
     </ItemGroup>
+
+    <Import Project="..\Shiny.Reflector\build\Shiny.Reflector.SourceGenerators.csproj" />
 </Project>

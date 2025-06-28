@@ -76,7 +76,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             var semanticModel = compilation.GetSemanticModel(classDeclaration!.SyntaxTree);
             var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
-            if (classSymbol == null)
+            if (classSymbol != null)
             {
                 var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
 
