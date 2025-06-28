@@ -2,10 +2,8 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
-using System.Linq;
 
 namespace Shiny.Reflector;
 
@@ -77,18 +75,23 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         {
             var semanticModel = compilation.GetSemanticModel(classDeclaration!.SyntaxTree);
             var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
-            
+
             if (classSymbol == null)
-                continue;
+            {
+                var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
 
-            var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
-            
-            var properties = GetProperties(classSymbol);
-            var classInfo = new ClassInfo(classSymbol.Name, namespaceName, classSymbol.ToDisplayString(), properties);
-            allClasses.Add(classInfo);
+                var properties = GetProperties(classSymbol);
+                var classInfo = new ClassInfo(
+                    classSymbol.Name, 
+                    namespaceName, 
+                    classSymbol.ToDisplayString(),
+                    properties
+                );
+                allClasses.Add(classInfo);
 
-            // Generate reflector class for this class
-            GenerateReflectorClass(context, classInfo);
+                // Generate reflector class for this class
+                GenerateReflectorClass(context, classInfo);
+            }
         }
 
         // Get the namespace for ReflectorExtensions from MSBuild properties
