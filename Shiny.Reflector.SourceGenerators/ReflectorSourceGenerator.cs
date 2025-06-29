@@ -140,29 +140,6 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         }
     }
 
-    static string GetReflectorExtensionsNamespace(AnalyzerConfigOptionsProvider optionsProvider)
-    {
-        // Try to get global options first
-        var globalOptions = optionsProvider.GlobalOptions;
-        
-        // Check for ShinyReflectorExtensionsNamespace first
-        if (globalOptions.TryGetValue("build_property.ShinyReflectorExtensionsNamespace", out var shinyNamespace) && 
-            !string.IsNullOrWhiteSpace(shinyNamespace))
-        {
-            return shinyNamespace;
-        }
-        
-        // Fallback to RootNamespace
-        if (globalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace) && 
-            !string.IsNullOrWhiteSpace(rootNamespace))
-        {
-            return rootNamespace;
-        }
-        
-        // Final fallback to global namespace
-        return "global";
-    }
-
     static string GetAccessorModifier(AnalyzerConfigOptionsProvider optionsProvider)
     {
         // Try to get global options first

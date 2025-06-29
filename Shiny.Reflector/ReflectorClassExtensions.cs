@@ -13,8 +13,8 @@ public static class ReflectorClassExtensions
     /// <returns>A reflector isn't if one is found to exist on the class</returns>
     public static IReflectorClass? GetReflector(this object @this, bool fallbackToTrueReflection = false)
     {
-        if (@this is IReflectorClass reflector)
-            return reflector;
+        if (@this is IHasReflectorClass reflector)
+            return reflector.Reflector;
 
         if (fallbackToTrueReflection)
             // Fallback to TrueReflectionReflectorClass if the object is a class
@@ -33,16 +33,25 @@ public static class ReflectorClassExtensions
         @this
             .Properties
             .FirstOrDefault(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
-    
+
     /// <summary>
     /// Checks if the class has a property with the specified name.
     /// </summary>
     /// <param name="this"></param>
     /// <param name="propertyName"></param>
     /// <returns></returns>
-    public static bool HasProperty(this IReflectorClass @this, string propertyName) 
-        => @this.Properties.Any(p => p.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
-
+    public static bool HasProperty(this IReflectorClass @this, string propertyName)
+    {
+        if (String.IsNullOrWhiteSpace(propertyName))
+            return false;
+        
+        return @this
+            .Properties
+            .Any(p => p.Name.Equals(
+                propertyName, 
+                StringComparison.OrdinalIgnoreCase
+            ));
+    }
 
     /// <summary>
     /// Tries to get the value of a property.
@@ -72,9 +81,10 @@ public static class ReflectorClassExtensions
     /// <returns></returns>
     public static bool TrySetValue(this IReflectorClass @this, string propertyName, object value)
     {
-        if (@this.HasProperty(propertyName))
+        var prop = @this.TryGetPropertyInfo(propertyName);
+        
+        if (prop != null && prop.Type.IsInstanceOfType(value))
         {
-            // TODO: validate the type if necessary
             @this[propertyName] = value;
             return true;
         }
