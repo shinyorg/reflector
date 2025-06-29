@@ -15,13 +15,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115" PrivateAssets="All" />
-        <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
-        <None Include="..\readme.md" Pack="true" PackagePath="\" />
-        <None Include="build\**" PackagePath="buildTransitive\" Pack="true" />
+        <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115" PrivateAssets="All"/>
+        <None Include="..\nuget.png" Pack="true" PackagePath="icon.png"/>
+        <None Include="..\readme.md" Pack="true" PackagePath="\"/>
+        <None Include="build\**" PackagePath="buildTransitive\" Pack="true"/>
         <None Include="..\Shiny.Reflector.SourceGenerators\bin\Release\netstandard2.0\Shiny.Reflector.SourceGenerators.dll"
               Pack="true"
               PackagePath="analyzers/dotnet/cs"
-              Visible="false" />
+              Visible="false"/>
     </ItemGroup>
 </Project>
