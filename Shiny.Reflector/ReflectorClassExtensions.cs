@@ -10,8 +10,8 @@ public static class ReflectorClassExtensions
     /// <returns>A reflector isn't if one is found to exist on the class</returns>
     public static IReflectorClass? GetReflector(this object @this)
     {
-        if (@this is IReflectorClass reflector)
-            return reflector;
+        if (@this is IHasReflectorClass reflector)
+            return reflector.Reflector;
 
         return null;
     }

@@ -102,9 +102,6 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
     static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, AnalyzerConfigOptionsProvider optionsProvider, SourceProductionContext context)
     {
-        // Get the namespace for ReflectorExtensions from MSBuild properties
-        var extensionsNamespace = GetReflectorExtensionsNamespace(optionsProvider);
-        
         // Get the accessor modifier from MSBuild properties
         var accessorModifier = GetAccessorModifier(optionsProvider);
         
@@ -334,9 +331,10 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             sb.AppendLine("{");
         }
 
-        sb.AppendLine($"{accessorModifier} partial class {classInfo.ClassName}");
+        sb.AppendLine($"{accessorModifier} partial class {classInfo.ClassName} : global::Shiny.Reflector.IHasReflectorClass");
         sb.AppendLine("{");
-        sb.AppendLine($"    {accessorModifier} global::Shiny.Reflector.IReflectorClass Reflector {{ get; }} = new {classInfo.ClassName}Reflector(this);");
+        sb.AppendLine("     private global::Shiny.Reflector.IReflectorClass? _reflector;");
+        sb.AppendLine($"    {accessorModifier} global::Shiny.Reflector.IReflectorClass Reflector => _reflector ??= new {classInfo.ClassName}Reflector(this);");
         sb.AppendLine("}");
 
         if (classInfo.Namespace != "global")

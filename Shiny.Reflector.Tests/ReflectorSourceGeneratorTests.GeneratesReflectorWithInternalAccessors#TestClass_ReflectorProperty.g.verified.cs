@@ -4,8 +4,9 @@
 
 namespace TestNamespace
 {
-internal partial class TestClass
+internal partial class TestClass : global::Shiny.Reflector.IHasReflectorClass
 {
-    internal global::Shiny.Reflector.IReflectorClass Reflector { get; } = new TestClassReflector(this);
+     private global::Shiny.Reflector.IReflectorClass? _reflector;
+    internal global::Shiny.Reflector.IReflectorClass Reflector => _reflector ??= new TestClassReflector(this);
 }
 }
