@@ -60,3 +60,7 @@ Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
     global namespace (no namespace)
 </PropertyGroup>
 ```
+
+### TODO
+* Ensure GetReflector calls don't get mixed up since they can be generated in different assemblies
+  * Could add it directly to a partial class, the problem is that will interfere with libraries like CTMVVM

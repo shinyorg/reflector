@@ -29,7 +29,12 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         // Generate the source code
         context.RegisterSourceOutput(
             compilationAndClassesAndOptions, 
-            static (spc, source) => Execute(source.Left.Left, source.Left.Right, source.Right, spc)
+            static (spc, source) => Execute(
+                source.Left.Left, 
+                source.Left.Right, 
+                source.Right, 
+                spc
+            )
         );
     }
 
@@ -63,45 +68,46 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
     static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, AnalyzerConfigOptionsProvider optionsProvider, SourceProductionContext context)
     {
-        if (classes.IsDefaultOrEmpty)
-            return;
-
-        var distinctClasses = classes.Where(x => x is not null).Distinct();
+        // Get the namespace for ReflectorExtensions from MSBuild properties
+        var extensionsNamespace = GetReflectorExtensionsNamespace(optionsProvider);
+        
+        // Get the accessor modifier from MSBuild properties
+        var accessorModifier = GetAccessorModifier(optionsProvider);
         
         // Collect all classes for generating a single ReflectorExtensions
         var allClasses = new List<ClassInfo>();
 
-        foreach (var classDeclaration in distinctClasses)
+        if (!classes.IsDefaultOrEmpty)
         {
-            var semanticModel = compilation.GetSemanticModel(classDeclaration!.SyntaxTree);
-            var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+            var distinctClasses = classes.Where(x => x is not null).Distinct();
 
-            if (classSymbol != null)
+            foreach (var classDeclaration in distinctClasses)
             {
-                var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
+                var semanticModel = compilation.GetSemanticModel(classDeclaration!.SyntaxTree);
+                var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
-                var properties = GetProperties(classSymbol);
-                var classInfo = new ClassInfo(
-                    classSymbol.Name, 
-                    namespaceName, 
-                    classSymbol.ToDisplayString(),
-                    properties
-                );
-                allClasses.Add(classInfo);
+                if (classSymbol != null)
+                {
+                    var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
 
-                // Generate reflector class for this class
-                GenerateReflectorClass(context, classInfo);
+                    var properties = GetProperties(classSymbol);
+                    var classInfo = new ClassInfo(
+                        classSymbol.Name, 
+                        namespaceName, 
+                        classSymbol.ToDisplayString(),
+                        properties
+                    );
+                    allClasses.Add(classInfo);
+
+                    // Generate reflector class for this class
+                    GenerateReflectorClass(context, classInfo, accessorModifier);
+                }
             }
         }
 
-        // Get the namespace for ReflectorExtensions from MSBuild properties
-        var extensionsNamespace = GetReflectorExtensionsNamespace(optionsProvider);
-
-        // Generate a single ReflectorExtensions class with all classes
-        if (allClasses.Count > 0)
-        {
-            GenerateReflectorExtensions(context, extensionsNamespace, allClasses);
-        }
+        // Always generate ReflectorExtensions class, even if no classes are found
+        // This allows libraries to safely check for null when calling GetReflector()
+        GenerateReflectorExtensions(context, extensionsNamespace, allClasses, accessorModifier);
     }
 
     static string GetReflectorExtensionsNamespace(AnalyzerConfigOptionsProvider optionsProvider)
@@ -127,6 +133,22 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         return "global";
     }
 
+    static string GetAccessorModifier(AnalyzerConfigOptionsProvider optionsProvider)
+    {
+        // Try to get global options first
+        var globalOptions = optionsProvider.GlobalOptions;
+
+        // Check for ShinyReflectorUseInternalAccessors
+        if (globalOptions.TryGetValue("build_property.ShinyReflectorUseInternalAccessors", out var useInternal) && 
+            string.Equals(useInternal, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return "internal";
+        }
+
+        // Default to public if not specified or false
+        return "public";
+    }
+
     static List<PropertyInfo> GetProperties(INamedTypeSymbol classSymbol)
     {
         var properties = new List<PropertyInfo>();
@@ -146,7 +168,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         return properties;
     }
 
-    static void GenerateReflectorClass(SourceProductionContext context, ClassInfo classInfo)
+    static void GenerateReflectorClass(SourceProductionContext context, ClassInfo classInfo, string accessorModifier)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"// <auto-generated />");
@@ -159,11 +181,11 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             sb.AppendLine("{");
         }
 
-        sb.AppendLine($"public class {classInfo.ClassName}Reflector : global::Shiny.Reflector.IReflectorClass");
+        sb.AppendLine($"{accessorModifier} class {classInfo.ClassName}Reflector : global::Shiny.Reflector.IReflectorClass");
         sb.AppendLine("{");
         sb.AppendLine($"    private readonly global::{classInfo.FullTypeName} _reflectedObject;");
         sb.AppendLine();
-        sb.AppendLine($"    public {classInfo.ClassName}Reflector(global::{classInfo.FullTypeName} reflectedObject)");
+        sb.AppendLine($"    {accessorModifier} {classInfo.ClassName}Reflector(global::{classInfo.FullTypeName} reflectedObject)");
         sb.AppendLine("    {");
         sb.AppendLine("        _reflectedObject = reflectedObject;");
         sb.AppendLine("    }");
@@ -266,7 +288,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         context.AddSource($"{classInfo.ClassName}Reflector.g.cs", sb.ToString());
     }
 
-    static void GenerateReflectorExtensions(SourceProductionContext context, string namespaceName, List<ClassInfo> classes)
+    static void GenerateReflectorExtensions(SourceProductionContext context, string namespaceName, List<ClassInfo> classes, string accessorModifier)
     {
         var sb = new StringBuilder();
         sb.AppendLine("// <auto-generated />");
@@ -279,9 +301,9 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             sb.AppendLine("{");
         }
 
-        sb.AppendLine("public static class ReflectorExtensions");
+        sb.AppendLine($"{accessorModifier} static class ReflectorExtensions");
         sb.AppendLine("{");
-        sb.AppendLine("    public static global::Shiny.Reflector.IReflectorClass? GetReflector(this object obj)");
+        sb.AppendLine($"    {accessorModifier} static global::Shiny.Reflector.IReflectorClass? GetReflector(this object obj)");
         sb.AppendLine("    {");
 
         foreach (var classInfo in classes)
