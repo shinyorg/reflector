@@ -408,6 +408,90 @@ public class ReflectorSourceGeneratorTests
         return Verify(Generate(source, properties));
     }
 
+    [Fact]
+    public Task GeneratesReflectorExtensionsEvenWithoutReflectorClasses()
+    {
+        var source = """
+            using System;
+
+            namespace TestNamespace
+            {
+                public class RegularClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        // No MSBuild properties provided, should fallback to "global"
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithCustomNamespaceEvenWithoutReflectorClasses()
+    {
+        var source = """
+            using System;
+
+            namespace TestNamespace
+            {
+                public class RegularClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Extensions"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorExtensionsWithRootNamespaceEvenWithoutReflectorClasses()
+    {
+        var source = """
+            using System;
+
+            namespace TestNamespace
+            {
+                public class RegularClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.RootNamespace"] = "MyApp"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
+    [Fact]
+    public Task GeneratesEmptyReflectorExtensionsWithCompletelyEmptyProject()
+    {
+        var source = """
+            // Empty project with just using statements
+            using System;
+            """;
+
+        var properties = new Dictionary<string, string>
+        {
+            ["build_property.RootNamespace"] = "EmptyProject"
+        };
+
+        return Verify(Generate(source, properties));
+    }
+
     GeneratorDriverRunResult Generate(string source, Dictionary<string, string>? analyzerConfigOptions = null)
     {
         // Parse the source code

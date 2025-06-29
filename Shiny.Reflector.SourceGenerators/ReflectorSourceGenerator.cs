@@ -63,45 +63,43 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
     static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, AnalyzerConfigOptionsProvider optionsProvider, SourceProductionContext context)
     {
-        if (classes.IsDefaultOrEmpty)
-            return;
-
-        var distinctClasses = classes.Where(x => x is not null).Distinct();
+        // Get the namespace for ReflectorExtensions from MSBuild properties
+        var extensionsNamespace = GetReflectorExtensionsNamespace(optionsProvider);
         
         // Collect all classes for generating a single ReflectorExtensions
         var allClasses = new List<ClassInfo>();
 
-        foreach (var classDeclaration in distinctClasses)
+        if (!classes.IsDefaultOrEmpty)
         {
-            var semanticModel = compilation.GetSemanticModel(classDeclaration!.SyntaxTree);
-            var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+            var distinctClasses = classes.Where(x => x is not null).Distinct();
 
-            if (classSymbol != null)
+            foreach (var classDeclaration in distinctClasses)
             {
-                var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
+                var semanticModel = compilation.GetSemanticModel(classDeclaration!.SyntaxTree);
+                var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
 
-                var properties = GetProperties(classSymbol);
-                var classInfo = new ClassInfo(
-                    classSymbol.Name, 
-                    namespaceName, 
-                    classSymbol.ToDisplayString(),
-                    properties
-                );
-                allClasses.Add(classInfo);
+                if (classSymbol != null)
+                {
+                    var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
 
-                // Generate reflector class for this class
-                GenerateReflectorClass(context, classInfo);
+                    var properties = GetProperties(classSymbol);
+                    var classInfo = new ClassInfo(
+                        classSymbol.Name, 
+                        namespaceName, 
+                        classSymbol.ToDisplayString(),
+                        properties
+                    );
+                    allClasses.Add(classInfo);
+
+                    // Generate reflector class for this class
+                    GenerateReflectorClass(context, classInfo);
+                }
             }
         }
 
-        // Get the namespace for ReflectorExtensions from MSBuild properties
-        var extensionsNamespace = GetReflectorExtensionsNamespace(optionsProvider);
-
-        // Generate a single ReflectorExtensions class with all classes
-        if (allClasses.Count > 0)
-        {
-            GenerateReflectorExtensions(context, extensionsNamespace, allClasses);
-        }
+        // Always generate ReflectorExtensions class, even if no classes are found
+        // This allows libraries to safely check for null when calling GetReflector()
+        GenerateReflectorExtensions(context, extensionsNamespace, allClasses);
     }
 
     static string GetReflectorExtensionsNamespace(AnalyzerConfigOptionsProvider optionsProvider)
