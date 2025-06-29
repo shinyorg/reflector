@@ -1,12 +1,10 @@
 ﻿[
   {
-    Property: <TrueReflectionReflectorClassTests>F81625FC24E9E5B4B6A512BD9FA92143A77EC97C682742FD16FAC5E28B1FDC91F__MySampleTestClass.Name,
     Name: Name,
     Type: string,
     HasSetter: true
   },
   {
-    Property: <TrueReflectionReflectorClassTests>F81625FC24E9E5B4B6A512BD9FA92143A77EC97C682742FD16FAC5E28B1FDC91F__MySampleTestClass.Age,
     Name: Age,
     Type: int,
     HasSetter: true

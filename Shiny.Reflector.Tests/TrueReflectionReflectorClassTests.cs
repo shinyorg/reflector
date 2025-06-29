@@ -37,7 +37,8 @@ public class TrueReflectionReflectorClassTests(ITestOutputHelper output)
     {
         var @this = new MySampleTestClass();
         var reflector = new TrueReflectionReflectorClass(@this);
-        return Verify(reflector.Properties);
+        return Verify(reflector.Properties
+            .Select(x => new PropertyGeneratedInfo(x.Name, x.Type, x.HasSetter)));
     }
 
     [Fact]
