@@ -7,6 +7,11 @@ var myClass = new MySampleClass
     Age = null
 };
 var reflector = myClass.GetReflector();
+if (reflector == null)
+{
+    Console.WriteLine("No reflector found");
+    return;
+}
 foreach (var prop in reflector.Properties) 
 {
     var objValue = reflector[prop.Name];

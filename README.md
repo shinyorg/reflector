@@ -4,9 +4,10 @@ Reflection without the actual... reflection.  AOT compliant!
 
 ## Usage
 
+Using the following attribute and marking your class as partial
 ```csharp
 [Shiny.Reflector.ReflectorAttribute]
-public class MyClass
+public partial class MyClass
 {
     public int MyProperty { get; set; }
     public string Message { get; set;}
@@ -63,4 +64,7 @@ Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
 
 ### TODO
 * Ensure GetReflector calls don't get mixed up since they can be generated in different assemblies
-  * Could add it directly to a partial class, the problem is that will interfere with libraries like CTMVVM
+  * Could add it directly to a partial class, the problem is that will interfere with libraries like CTMVVM or does it?
+  * I don't want dependency injection involved here
+  * Shiny wants to access GetReflector, so it needs to be public and I need to ensure it gets generated in the same assembly OR does pickup
+    the extension from another assembly
