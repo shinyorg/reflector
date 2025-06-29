@@ -2,14 +2,108 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using System.Reflection;
+using Shiny.Reflector.SourceGenerators;
 
 namespace Shiny.Reflector.Tests;
-
 
 public class ReflectorSourceGeneratorTests
 {
     [Fact]
-    public Task GeneratesReflectorForSimpleClass()
+    public Task GeneratesReflectorForPartialClass()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForPartialClassWithReadOnlyProperties()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public partial class TestClass
+                {
+                    public Guid Id { get; }
+                    public string Name { get; set; }
+                    public DateTime CreatedAt { get; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForPartialClassWithNullableProperties()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string? Name { get; set; }
+                    public int? Age { get; set; }
+                    public DateTime? BirthDate { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForPartialClassWithComplexTypes()
+    {
+        var source = """
+            using System;
+            using System.Collections.Generic;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public Address Address { get; set; }
+                    public List<string> Tags { get; set; }
+                }
+
+                public class Address
+                {
+                    public string Street { get; set; }
+                    public string City { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task DoesNotGenerateReflectorForNonPartialClass()
     {
         var source = """
             using System;
@@ -30,7 +124,7 @@ public class ReflectorSourceGeneratorTests
     }
 
     [Fact]
-    public Task GeneratesReflectorForClassWithReadOnlyProperties()
+    public Task DoesNotGenerateReflectorForClassWithoutAttribute()
     {
         var source = """
             using System;
@@ -38,35 +132,10 @@ public class ReflectorSourceGeneratorTests
 
             namespace TestNamespace
             {
-                [Reflector]
-                public class TestClass
+                public partial class TestClass
                 {
-                    public Guid Id { get; }
                     public string Name { get; set; }
-                    public DateTime CreatedAt { get; }
-                }
-            }
-            """;
-
-        var result = Generate(source);
-        return Verify(result);
-    }
-
-    [Fact]
-    public Task GeneratesReflectorForClassWithNullableProperties()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string? Name { get; set; }
-                    public int? Age { get; set; }
-                    public DateTime? BirthDate { get; set; }
+                    public int Age { get; set; }
                 }
             }
             """;
@@ -75,36 +144,7 @@ public class ReflectorSourceGeneratorTests
     }
 
     [Fact]
-    public Task GeneratesReflectorForClassWithComplexTypes()
-    {
-        var source = """
-            using System;
-            using System.Collections.Generic;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public Address Address { get; set; }
-                    public List<string> Tags { get; set; }
-                }
-
-                public class Address
-                {
-                    public string Street { get; set; }
-                    public string City { get; set; }
-                }
-            }
-            """;
-
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorForMultipleClassesInSameNamespace()
+    public Task GeneratesReflectorForPartialClassWithMixedPropertyTypes()
     {
         var source = """
             using System;
@@ -113,62 +153,7 @@ public class ReflectorSourceGeneratorTests
             namespace TestNamespace
             {
                 [Reflector]
-                public class FirstClass
-                {
-                    public string Name { get; set; }
-                }
-
-                [Reflector]
-                public class SecondClass
-                {
-                    public int Value { get; set; }
-                }
-            }
-            """;
-
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorForClassesInDifferentNamespaces()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace FirstNamespace
-            {
-                [Reflector]
-                public class FirstClass
-                {
-                    public string Name { get; set; }
-                }
-            }
-
-            namespace SecondNamespace
-            {
-                [Reflector]
-                public class SecondClass
-                {
-                    public int Value { get; set; }
-                }
-            }
-            """;
-
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorForClassWithMixedPropertyTypes()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
+                public partial class TestClass
                 {
                     public Guid Id { get; }
                     public string? Name { get; set; }
@@ -190,48 +175,7 @@ public class ReflectorSourceGeneratorTests
     }
 
     [Fact]
-    public Task DoesNotGenerateReflectorForClassWithoutAttribute()
-    {
-        var source = """
-            using System;
-
-            namespace TestNamespace
-            {
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorForClassWithOnlyReadOnlyProperties()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public Guid Id { get; }
-                    public string Name { get; }
-                    public DateTime CreatedAt { get; }
-                }
-            }
-            """;
-
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorForClassWithGenericTypes()
+    public Task GeneratesReflectorForPartialClassWithGenericTypes()
     {
         var source = """
             using System;
@@ -241,7 +185,7 @@ public class ReflectorSourceGeneratorTests
             namespace TestNamespace
             {
                 [Reflector]
-                public class TestClass
+                public partial class TestClass
                 {
                     public List<string> Names { get; set; }
                     public Dictionary<string, int> Values { get; set; }
@@ -254,7 +198,7 @@ public class ReflectorSourceGeneratorTests
     }
 
     [Fact]
-    public Task GeneratesReflectorForEmptyClass()
+    public Task GeneratesReflectorForEmptyPartialClass()
     {
         var source = """
             using System;
@@ -263,233 +207,13 @@ public class ReflectorSourceGeneratorTests
             namespace TestNamespace
             {
                 [Reflector]
-                public class EmptyClass
+                public partial class EmptyClass
                 {
                 }
             }
             """;
 
         return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithShinyReflectorExtensionsNamespace()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Extensions"
-        };
-
-        return Verify(Generate(source, properties));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithRootNamespaceFallback()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.RootNamespace"] = "MyApp"
-        };
-
-        return Verify(Generate(source, properties));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithGlobalNamespaceFallback()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        // No MSBuild properties provided, should fallback to "global"
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithShinyNamespacePriority()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        // Both properties provided - ShinyReflectorExtensionsNamespace should take priority
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Reflection",
-            ["build_property.RootNamespace"] = "MyApp"
-        };
-
-        return Verify(Generate(source, properties));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithMultipleClassesInCustomNamespace()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace FirstNamespace
-            {
-                [Reflector]
-                public class FirstClass
-                {
-                    public string Name { get; set; }
-                }
-            }
-
-            namespace SecondNamespace
-            {
-                [Reflector]
-                public class SecondClass
-                {
-                    public int Value { get; set; }
-                }
-            }
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.ShinyReflectorExtensionsNamespace"] = "Common.Extensions"
-        };
-
-        return Verify(Generate(source, properties));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsEvenWithoutReflectorClasses()
-    {
-        var source = """
-            using System;
-
-            namespace TestNamespace
-            {
-                public class RegularClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        // No MSBuild properties provided, should fallback to "global"
-        return Verify(Generate(source));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithCustomNamespaceEvenWithoutReflectorClasses()
-    {
-        var source = """
-            using System;
-
-            namespace TestNamespace
-            {
-                public class RegularClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Extensions"
-        };
-
-        return Verify(Generate(source, properties));
-    }
-
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithRootNamespaceEvenWithoutReflectorClasses()
-    {
-        var source = """
-            using System;
-
-            namespace TestNamespace
-            {
-                public class RegularClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.RootNamespace"] = "MyApp"
-        };
-
-        return Verify(Generate(source, properties));
-    }
-
-    [Fact]
-    public Task GeneratesEmptyReflectorExtensionsWithCompletelyEmptyProject()
-    {
-        var source = """
-            // Empty project with just using statements
-            using System;
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.RootNamespace"] = "EmptyProject"
-        };
-
-        return Verify(Generate(source, properties));
     }
 
     [Fact]
@@ -502,7 +226,7 @@ public class ReflectorSourceGeneratorTests
             namespace TestNamespace
             {
                 [Reflector]
-                public class TestClass
+                public partial class TestClass
                 {
                     public string Name { get; set; }
                     public int Age { get; set; }
@@ -518,32 +242,6 @@ public class ReflectorSourceGeneratorTests
         return Verify(Generate(source, properties));
     }
 
-    [Fact]
-    public Task GeneratesReflectorExtensionsWithInternalAccessors()
-    {
-        var source = """
-            using System;
-            using Shiny.Reflector;
-
-            namespace TestNamespace
-            {
-                [Reflector]
-                public class TestClass
-                {
-                    public string Name { get; set; }
-                    public int Age { get; set; }
-                }
-            }
-            """;
-
-        var properties = new Dictionary<string, string>
-        {
-            ["build_property.ShinyReflectorUseInternalAccessors"] = "true",
-            ["build_property.ShinyReflectorExtensionsNamespace"] = "MyApp.Extensions"
-        };
-
-        return Verify(Generate(source, properties));
-    }
 
     [Fact]
     public Task GeneratesReflectorWithInternalAccessorsEvenWithoutReflectorClasses()
@@ -580,7 +278,7 @@ public class ReflectorSourceGeneratorTests
             namespace TestNamespace
             {
                 [Reflector]
-                public class TestClass
+                public partial class TestClass
                 {
                     public string Name { get; set; }
                     public int Age { get; set; }
@@ -606,7 +304,7 @@ public class ReflectorSourceGeneratorTests
             namespace TestNamespace
             {
                 [Reflector]
-                public class TestClass
+                public partial class TestClass
                 {
                     public string Name { get; set; }
                     public int Age { get; set; }

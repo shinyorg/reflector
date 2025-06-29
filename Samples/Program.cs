@@ -6,7 +6,13 @@ var myClass = new MySampleClass
     Name = "Hello World",
     Age = null
 };
+
 var reflector = myClass.GetReflector();
+if (reflector == null)
+{
+    Console.WriteLine("No reflector found");
+    return;
+}
 foreach (var prop in reflector.Properties) 
 {
     var objValue = reflector[prop.Name];
@@ -26,6 +32,7 @@ Console.WriteLine("Reflector Value: " + reflector["age"]);
 
 // set with generics
 reflector.SetValue("Age", 99);
+Console.WriteLine("Reflector Value After Set: " + reflector["age"]);
 
 // or just an object on the indexer
 reflector["name"] = "Something Else";

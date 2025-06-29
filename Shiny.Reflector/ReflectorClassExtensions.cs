@@ -3,6 +3,18 @@ namespace Shiny.Reflector;
 
 public static class ReflectorClassExtensions
 {
+    /// <summary>
+    /// If the object is an <see cref="IReflectorClass"/>, this will return it.
+    /// </summary>
+    /// <param name="this">Your object</param>
+    /// <returns>A reflector isn't if one is found to exist on the class</returns>
+    public static IReflectorClass? GetReflector(this object @this)
+    {
+        if (@this is IHasReflectorClass reflector)
+            return reflector.Reflector;
+
+        return null;
+    }
     
     /// <summary>
     /// Tries to get the property information for a given property name.

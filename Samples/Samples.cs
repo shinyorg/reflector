@@ -3,7 +3,7 @@ using Shiny.Reflector;
 namespace Samples;
 
 [Reflector]
-public class MySampleClass
+public partial class MySampleClass
 {
     public string Name { get; set; }
     public int? Age { get; set; }
