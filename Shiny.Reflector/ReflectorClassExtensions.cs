@@ -1,3 +1,5 @@
+using Shiny.Reflector.Infrastructure;
+
 namespace Shiny.Reflector;
 
 
@@ -7,11 +9,16 @@ public static class ReflectorClassExtensions
     /// If the object is an <see cref="IReflectorClass"/>, this will return it.
     /// </summary>
     /// <param name="this">Your object</param>
+    /// <param name="fallbackToTrueReflection">Use true reflection if necessary</param>
     /// <returns>A reflector isn't if one is found to exist on the class</returns>
-    public static IReflectorClass? GetReflector(this object @this)
+    public static IReflectorClass? GetReflector(this object @this, bool fallbackToTrueReflection = false)
     {
-        if (@this is IHasReflectorClass reflector)
-            return reflector.Reflector;
+        if (@this is IReflectorClass reflector)
+            return reflector;
+
+        if (fallbackToTrueReflection)
+            // Fallback to TrueReflectionReflectorClass if the object is a class
+            return new TrueReflectionReflectorClass(@this);
 
         return null;
     }
