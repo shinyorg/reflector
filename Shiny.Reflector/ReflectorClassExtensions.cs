@@ -132,8 +132,49 @@ public static class ReflectorClassExtensions
         var result = false;
         var property = @this.TryGetPropertyInfo(propertyName);
         if (property is { HasSetter: true } && typeof(T).IsAssignableTo(property.Type))
+        {
             @this[propertyName] = value;
-
+            result = true;
+        }
         return result;
+    }
+
+
+    /// <summary>
+    /// Converts the properties of the reflector class to a dictionary.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <returns></returns>
+    public static IDictionary<string, object> ToDictionary(this IReflectorClass @this)
+    {
+        var dict = new Dictionary<string, object>();
+        foreach (var prop in @this.Properties)
+        {
+            var value = @this[prop.Name];
+            if (value != null)
+                dict.Add(prop.Name, value);
+        }
+
+        return dict;
+    }
+
+
+    /// <summary>
+    /// Sets the properties of the reflector class from a dictionary.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="dictionary"></param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public static void SetObjectFromDictionary(this IReflectorClass @this, IDictionary<string, object> dictionary)
+    {
+        if (dictionary == null)
+            throw new ArgumentNullException(nameof(dictionary), "Dictionary cannot be null");
+
+        foreach (var kvp in dictionary)
+        {
+            var prop = @this.TryGetPropertyInfo(kvp.Key);
+            if (prop != null && prop.Type.IsInstanceOfType(kvp.Value))
+                @this[kvp.Key] = kvp.Value;
+        }
     }
 }
