@@ -14,6 +14,9 @@ public partial class MyClass
 }
 ```
 
+> [!NOTE]
+> Works on records as well, but you must use the `partial` keyword and attribute just like a class.
+
 Just that attribute allows you to do this:
 
 ```csharp
@@ -46,25 +49,3 @@ reflector["name"] = "Something Else";
 Console.WriteLine("Reflector Name Value: " + reflector["NaMe"]);
 Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
 ```
-
-### Put ReflectionExtensions (the thing that let's you get the reflector) in a separate assembly
-
-```
-<PropertyGroup>
-    <ShinyReflectorNamespace>MyNamespace</ShinyReflectorNamespace>
-    
-    OR
-    
-    <RootNamespace>MyNamespace</RootNamespace>
-    
-    OTHERWISE
-    global namespace (no namespace)
-</PropertyGroup>
-```
-
-### TODO
-* Ensure GetReflector calls don't get mixed up since they can be generated in different assemblies
-  * Could add it directly to a partial class, the problem is that will interfere with libraries like CTMVVM or does it?
-  * I don't want dependency injection involved here
-  * Shiny wants to access GetReflector, so it needs to be public and I need to ensure it gets generated in the same assembly OR does pickup
-    the extension from another assembly

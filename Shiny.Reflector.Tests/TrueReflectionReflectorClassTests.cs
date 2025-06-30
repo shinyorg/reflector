@@ -8,6 +8,26 @@ namespace Shiny.Reflector.Tests;
 public class TrueReflectionReflectorClassTests(ITestOutputHelper output)
 {
     [Fact]
+    public void Records_Properties()
+    {
+        var @this = new TestRecord("123")
+        {
+            Value = 12.34
+        };
+        var reflector = new TrueReflectionReflectorClass(@this);
+        reflector.GetValue<string>("Id").ShouldBe("123");
+
+        var prop = reflector.TryGetPropertyInfo("Id");
+        prop.ShouldNotBeNull();
+        prop.HasSetter.ShouldBeFalse("should not be true");
+
+        prop = reflector.TryGetPropertyInfo("Value");
+        prop.ShouldNotBeNull();
+        prop.HasSetter.ShouldBeTrue("should be true");
+    }
+    
+    
+    [Fact]
     public void GetValue_Presets()
     {
         var @this = new MySampleTestClass
@@ -41,6 +61,7 @@ public class TrueReflectionReflectorClassTests(ITestOutputHelper output)
             .Select(x => new PropertyGeneratedInfo(x.Name, x.Type, x.HasSetter)));
     }
 
+    
     [Fact]
     public void SetValue_Null()
     {
@@ -53,6 +74,11 @@ public class TrueReflectionReflectorClassTests(ITestOutputHelper output)
         reflector["Name"] = null;
         @this.Name.ShouldBeNull();
     }
+}
+
+file partial record TestRecord(string Id)
+{
+    public double Value { get; set; }
 }
 
 file class MySampleTestClass
