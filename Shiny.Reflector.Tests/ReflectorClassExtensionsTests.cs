@@ -2,9 +2,37 @@ using Shouldly;
 
 namespace Shiny.Reflector.Tests;
 
+
 public class ReflectorClassExtensionsTests
 {
-
+    [Fact]
+    public void Records_TrySetValue()
+    {
+        var record = new TestRecord("1234")
+        {
+            Value = 11
+        };
+        var reflector = record.GetReflector()!;
+        reflector
+            .TrySetValue(
+                nameof(TestRecord.Id),
+                "NewId"
+            )
+            .ShouldBeFalse();
+        
+        record.Id.ShouldBe("1234");
+        
+        reflector
+            .TrySetValue(
+                nameof(TestRecord.Value),
+                22
+            )
+            .ShouldBeTrue();
+        
+        record.Value.ShouldBe(22);
+    }
+    
+    
     [Fact]
     public void TryGetValue_WrongTypeReturnsFalse()
     {
@@ -108,6 +136,12 @@ public class ReflectorClassExtensionsTests
     //     return Verify(newGraph)
     //         .IgnoreMembersWithType(typeof(IReflectorClass));
     // }
+}
+
+[Reflector]
+public partial record TestRecord(string Id)
+{
+    public int Value { get; set; }
 }
 
 [Reflector]

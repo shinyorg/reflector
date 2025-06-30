@@ -9,6 +9,27 @@ namespace Shiny.Reflector.Tests;
 public class ReflectorSourceGeneratorTests
 {
     [Fact]
+    public Task GeneratesReflectorForRecords()
+    {
+        var source = """
+             using System;
+             using Shiny.Reflector;
+
+             namespace TestNamespace
+             {
+                 [Reflector]
+                 public partial record TestClass(string Name, int Age)
+                 {
+                     public double Value { get; set; }
+                 }
+             }
+             """;
+
+        return Verify(Generate(source));
+    }
+    
+    
+    [Fact]
     public Task GeneratesReflectorForPartialClass()
     {
         var source = """

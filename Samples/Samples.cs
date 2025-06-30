@@ -11,7 +11,8 @@ public partial class MySampleClass
     public AnotherSampleClass SampleClass { get; set; }
 }
 
-public class AnotherSampleClass
+[Reflector]
+public partial record AnotherSampleClass(int Id)
 {
     public string Value { get; set; }
 }

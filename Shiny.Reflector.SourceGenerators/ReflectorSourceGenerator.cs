@@ -71,15 +71,18 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
     }
 
     static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-        => node is ClassDeclarationSyntax cls && 
-           cls.AttributeLists.Count > 0 && 
-           cls.Modifiers.Any(SyntaxKind.PartialKeyword);
+        => (node is ClassDeclarationSyntax cls && 
+            cls.AttributeLists.Count > 0 && 
+            cls.Modifiers.Any(SyntaxKind.PartialKeyword)) ||
+           (node is RecordDeclarationSyntax rec && 
+            rec.AttributeLists.Count > 0 && 
+            rec.Modifiers.Any(SyntaxKind.PartialKeyword));
 
-    static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    static TypeDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
-        var classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
+        var typeDeclarationSyntax = (TypeDeclarationSyntax)context.Node;
 
-        foreach (var attributeListSyntax in classDeclarationSyntax.AttributeLists)
+        foreach (var attributeListSyntax in typeDeclarationSyntax.AttributeLists)
         {
             foreach (var attributeSyntax in attributeListSyntax.Attributes)
             {
@@ -92,7 +95,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
                 if (fullName == "Shiny.Reflector.ReflectorAttribute")
                 {
-                    return classDeclarationSyntax;
+                    return typeDeclarationSyntax;
                 }
             }
         }
@@ -100,7 +103,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         return null;
     }
 
-    static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, AnalyzerConfigOptionsProvider optionsProvider, SourceProductionContext context)
+    static void Execute(Compilation compilation, ImmutableArray<TypeDeclarationSyntax?> typeDeclarations, AnalyzerConfigOptionsProvider optionsProvider, SourceProductionContext context)
     {
         // Get the accessor modifier from MSBuild properties
         var accessorModifier = GetAccessorModifier(optionsProvider);
@@ -108,33 +111,33 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         // Collect all classes for generating a single ReflectorExtensions
         var allClasses = new List<ClassInfo>();
 
-        if (!classes.IsDefaultOrEmpty)
+        if (!typeDeclarations.IsDefaultOrEmpty)
         {
-            var distinctClasses = classes.Where(x => x is not null).Distinct();
+            var distinctTypes = typeDeclarations.Where(x => x is not null).Distinct();
 
-            foreach (var classDeclaration in distinctClasses)
+            foreach (var typeDeclaration in distinctTypes)
             {
-                var semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-                var classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
+                var semanticModel = compilation.GetSemanticModel(typeDeclaration.SyntaxTree);
+                var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
 
-                if (classSymbol != null)
+                if (typeSymbol != null)
                 {
-                    var namespaceName = classSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
+                    var namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
 
-                    var properties = GetProperties(classSymbol);
+                    var properties = GetProperties(typeSymbol);
                     var classInfo = new ClassInfo(
-                        classSymbol.Name, 
+                        typeSymbol.Name, 
                         namespaceName, 
-                        classSymbol.ToDisplayString(),
+                        typeSymbol.ToDisplayString(),
                         properties
                     );
                     allClasses.Add(classInfo);
 
-                    // Generate reflector class for this class
+                    // Generate reflector class for this type
                     GenerateReflectorClass(context, classInfo, accessorModifier);
                     
-                    // Generate partial class with Reflector property
-                    GeneratePartialClassWithReflectorProperty(context, classInfo, accessorModifier);
+                    // Generate partial type with Reflector property
+                    GeneratePartialTypeWithReflectorProperty(context, classInfo, accessorModifier, typeSymbol.IsRecord);
                 }
             }
         }
@@ -156,15 +159,32 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         return "public";
     }
 
-    static List<PropertyInfo> GetProperties(INamedTypeSymbol classSymbol)
+    static List<PropertyInfo> GetProperties(INamedTypeSymbol typeSymbol)
     {
         var properties = new List<PropertyInfo>();
 
-        foreach (var member in classSymbol.GetMembers())
+        foreach (var member in typeSymbol.GetMembers())
         {
             if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public } property)
             {
-                var hasSetter = property.SetMethod != null && property.SetMethod.DeclaredAccessibility == Accessibility.Public;
+                // For records, primary constructor parameters are readonly by default
+                // We can identify them by checking if they are auto-implemented properties
+                // that don't have an explicit setter or if the setter is init-only
+                bool hasSetter = false;
+                
+                if (typeSymbol.IsRecord)
+                {
+                    // For records, only allow setting if there's an explicit setter that's not init-only
+                    hasSetter = property.SetMethod != null && 
+                               property.SetMethod.DeclaredAccessibility == Accessibility.Public &&
+                               !property.SetMethod.IsInitOnly;
+                }
+                else
+                {
+                    // For classes, use the original logic
+                    hasSetter = property.SetMethod != null && property.SetMethod.DeclaredAccessibility == Accessibility.Public;
+                }
+                
                 var typeName = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                 // Remove nullable annotations for typeof() expressions
                 var typeForTypeOf = typeName.Replace("?", "");
@@ -295,7 +315,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         context.AddSource($"{classInfo.ClassName}Reflector.g.cs", sb.ToString());
     }
 
-    static void GeneratePartialClassWithReflectorProperty(SourceProductionContext context, ClassInfo classInfo, string accessorModifier)
+    static void GeneratePartialTypeWithReflectorProperty(SourceProductionContext context, ClassInfo classInfo, string accessorModifier, bool isRecord)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"// <auto-generated />");
@@ -308,7 +328,8 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
             sb.AppendLine("{");
         }
 
-        sb.AppendLine($"{accessorModifier} partial class {classInfo.ClassName} : global::Shiny.Reflector.IHasReflectorClass");
+        var typeKeyword = isRecord ? "record" : "class";
+        sb.AppendLine($"{accessorModifier} partial {typeKeyword} {classInfo.ClassName} : global::Shiny.Reflector.IHasReflectorClass");
         sb.AppendLine("{");
         sb.AppendLine("     private global::Shiny.Reflector.IReflectorClass? _reflector;");
         sb.AppendLine($"    {accessorModifier} global::Shiny.Reflector.IReflectorClass Reflector => _reflector ??= new {classInfo.ClassName}Reflector(this);");
