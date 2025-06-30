@@ -15,7 +15,7 @@ public class TrueReflectionReflectorClass : IReflectorClass
         this.properties = obj
             .GetType()
             .GetProperties()
-            .Where(x => x.CanRead)
+            .Where(x => x.GetMethod != null)
             .Select(x => new ReflectedPropertyGeneratedInfo(x))
             .ToArray();
     }
@@ -57,5 +57,9 @@ public record ReflectedPropertyGeneratedInfo(
 ) : PropertyGeneratedInfo(
     Property.Name, 
     Property.PropertyType, 
-    Property.CanWrite
+    Property.SetMethod != null && !Property
+        .SetMethod
+        .ReturnParameter
+        .GetRequiredCustomModifiers()
+        .Any(m => m.Name == "IsExternalInit")
 );
