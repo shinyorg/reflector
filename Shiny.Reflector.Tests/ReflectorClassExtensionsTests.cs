@@ -78,6 +78,36 @@ public class ReflectorClassExtensionsTests
 
         (cls.AnotherValue as InheritedTestClass).ShouldNotBeNull("Class did not cast");
     }
+
+
+    // [Fact]
+    // public Task GetDictionary_SetDictionary()
+    // {
+    //     var graph = new ReflectorClassExtensionsTestClass
+    //     {
+    //         IntValue = 11,
+    //         StringValue = "Test String",
+    //         AnotherValue = new(),
+    //         DateValue = DateTimeOffset.UtcNow,
+    //         Third = new() 
+    //         {
+    //             Name = "Item 1",
+    //             Items = [
+    //                 new FourthClass { Value = 1 },
+    //                 new FourthClass { Value = 2 }
+    //             ]
+    //         }
+    //     };
+    //     var reflector = graph.GetReflector()!;
+    //     var dict = reflector.ToDictionary(true);
+    //     
+    //     var newGraph = new ReflectorClassExtensionsTestClass();
+    //     var newReflector = newGraph.GetReflector()!;
+    //     newReflector.SetObjectFromDictionary(dict);
+    //
+    //     return Verify(newGraph)
+    //         .IgnoreMembersWithType(typeof(IReflectorClass));
+    // }
 }
 
 [Reflector]
@@ -86,9 +116,24 @@ public partial class ReflectorClassExtensionsTestClass
     public int IntValue { get; set; }
     public string StringValue { get; set; }
     public AnotherTestClass AnotherValue { get; set; }
+
+    public DateTimeOffset DateValue { get; set; } = DateTimeOffset.Now;
+    
+    public ThirdClass Third { get; set; }
 }
 
 public class AnotherTestClass;
 
 public class InheritedTestClass : AnotherTestClass;
 
+[Reflector]
+public partial class ThirdClass
+{
+    public string Name { get; set; }
+    public FourthClass[] Items { get; set; }
+}
+
+public partial class FourthClass
+{
+    public int Value { get; set; }
+}
