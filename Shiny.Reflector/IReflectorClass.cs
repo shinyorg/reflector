@@ -1,6 +1,7 @@
 namespace Shiny.Reflector;
 
-
+// TODO: events
+// TODO: attributes
 public interface IReflectorClass
 {
     object ReflectedObject { get; }
@@ -10,22 +11,28 @@ public interface IReflectorClass
     void SetValue<T>(string key, T? value);
 
     object? this[string key] { get; set; }
+    
+    // Attribute[] Attributes { get; }
+    // object? CallMethod(string methodName, params object?[]? parameters);
+    // Task<object?> CallMethodAsync(string methodName, params object?[]? parameters);
 }
 
-//void CallMethod(string methodName, params object?[]? parameters);
-// object? CallMethod
-//Task CallAsyncMethod
-// Task<T> CallAsyncMethod<T>(string methodName, params object?[]? parameters);
 
-// public record MethodGeneratedInfo(
-//     string Name,
-//     Type ReturnType,
-//     ParameterGeneratedInfo[] Parameters
-// );
-//
-// public record ParameterGeneratedInfo(
-//     string Name,
-//     Type Type,
-//     bool IsOptional = false,
-//     object? DefaultValue = null
-// );
+// TODO: generics
+/*
+public record MethodGeneratedInfo(
+     string Name,
+     Type ReturnType,
+     bool IsAsync,
+     Attribute[] Attributes,
+     ParameterGeneratedInfo[] Parameters
+);
+
+public record ParameterGeneratedInfo(
+     string Name,
+     Type Type,
+     Attribute[] Attributes,
+     bool IsOptional = false,
+     object? DefaultValue = null
+);
+*/

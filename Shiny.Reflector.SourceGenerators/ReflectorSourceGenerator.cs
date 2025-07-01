@@ -175,14 +175,16 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
                 if (typeSymbol.IsRecord)
                 {
                     // For records, only allow setting if there's an explicit setter that's not init-only
-                    hasSetter = property.SetMethod != null && 
-                               property.SetMethod.DeclaredAccessibility == Accessibility.Public &&
-                               !property.SetMethod.IsInitOnly;
+                    hasSetter = property.SetMethod is
+                    {
+                        DeclaredAccessibility: Accessibility.Public, 
+                        IsInitOnly: false
+                    };
                 }
                 else
                 {
                     // For classes, use the original logic
-                    hasSetter = property.SetMethod != null && property.SetMethod.DeclaredAccessibility == Accessibility.Public;
+                    hasSetter = property.SetMethod is { DeclaredAccessibility: Accessibility.Public };
                 }
                 
                 var typeName = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
