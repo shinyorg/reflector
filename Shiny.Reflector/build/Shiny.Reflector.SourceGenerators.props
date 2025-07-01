@@ -1,4 +1,8 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <ItemGroup Condition=" '$(ImplicitUsings)' == 'true' OR '$(ImplicitUsings)' == 'enable' ">
+        <Using Include="Shiny.Reflector" />
+    </ItemGroup>
+    
     <ItemGroup>
         <CompilerVisibleProperty Include="ShinyReflectorUseInternalAccessors" />
     </ItemGroup>
