@@ -1,5 +1,46 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <ItemGroup>
-        <CompilerVisibleProperty Include="ShinyReflectorUseInternalAccessors" />
+    <ItemGroup Condition=" '$(ImplicitUsings)' == 'true' OR '$(ImplicitUsings)' == 'enable' ">
+        <Using Include="Shiny.Reflector" />
     </ItemGroup>
+
+    <ItemGroup>
+        <AvailableItemName Include="ReflectorItem" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <CompilerVisibleProperty Include="ShinyReflectorUseInternalAccessors"/>
+        
+        <CompilerVisibleProperty Include="ShinyReflectorGenerateAssemblyInfo"/>
+        <CompilerVisibleProperty Include="ShinyReflectorAssemblyInfoClassName"/>
+        <CompilerVisibleProperty Include="ShinyReflectorAssemblyInfoNamespace"/>
+        <CompilerVisibleProperty Include="Configuration"/>
+        <CompilerVisibleProperty Include="Company"/>
+        <CompilerVisibleProperty Include="Title"/>
+        <CompilerVisibleProperty Include="Description"/>
+        <CompilerVisibleProperty Include="Version"/>
+        <CompilerVisibleProperty Include="ApplicationTitle"/>
+        <CompilerVisibleProperty Include="ApplicationId"/>
+        <CompilerVisibleProperty Include="ApplicationVersion"/>
+        <CompilerVisibleProperty Include="ApplicationDisplayVersion"/>
+        <CompilerVisibleProperty Include="AssemblyCompany"/>
+        <CompilerVisibleProperty Include="AssemblyProduct"/>
+        <CompilerVisibleProperty Include="AssemblyCopyright"/>
+        <CompilerVisibleProperty Include="AssemblyVersion"/>
+        <CompilerVisibleProperty Include="AssemblyFileVersion"/>
+        <CompilerVisibleProperty Include="AssemblyInformationalVersion"/>
+        <CompilerVisibleProperty Include="TargetFramework"/>
+        <CompilerVisibleProperty Include="TargetFrameworkVersion"/>
+        <CompilerVisibleProperty Include="Platform"/>
+        
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="SourceItemGroup" Visible="false" />
+        <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Value" Visible="false" />
+    </ItemGroup>
+
+    <Target Name="_InjectShinyReflectorAdditionalFiles" BeforeTargets="GenerateMSBuildEditorConfigFileShouldRun">
+        <ItemGroup>
+            <AdditionalFiles Include="@(ReflectorItem)"
+                             Value="%(ReflectorItem.Value)"
+                             SourceItemGroup="ReflectorItem" />
+        </ItemGroup>
+    </Target>
 </Project>

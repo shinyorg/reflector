@@ -18,6 +18,10 @@ public class TrueReflectionReflectorClass : IReflectorClass
             .Where(x => x.GetMethod != null)
             .Select(x => new ReflectedPropertyGeneratedInfo(x))
             .ToArray();
+        
+        //obj.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        //    .Where(m => m.IsSpecialName && (m.Name.StartsWith("get_") || m.Name.StartsWith("set_")))
+        //    .ToList();
     }
     
     
