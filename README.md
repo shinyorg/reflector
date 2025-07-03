@@ -1,6 +1,15 @@
 # Shiny Reflector
 
-Reflection without the actual... reflection.  AOT compliant!
+Reflection is awesome and super powerful, but also very slow and non-AOT compliant. Using source generators, we look to solve some of those pain points.
+This library gives you the power of reflection... without the actual reflection!
+
+## Features
+- List Properties as well as what have getters and setters
+- Read/Write Values using string keys and object values
+- Easy property indexer for loose typing access (ie. myreflector["MyProperty"] = 123)
+- Fallback to reflection when a `reflector` is not available
+- Generate build variables of your choice into a static class for easy access
+- Works with the [MVVM Community Toolkit](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/) source generation
 
 ## Usage
 
