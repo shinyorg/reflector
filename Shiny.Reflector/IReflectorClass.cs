@@ -12,26 +12,30 @@ public interface IReflectorClass
 
     object? this[string key] { get; set; }
     
-    // Attribute[] Attributes { get; }
+    // AttributeInfo[] Attributes { get; }
     // object? CallMethod(string methodName, params object?[]? parameters);
     // Task<object?> CallMethodAsync(string methodName, params object?[]? parameters);
 }
 
 
+// public record AttributeInfo(
+//     Type Type
+//     // TODO: properties/values
+// );
 // TODO: generics
 /*
 public record MethodGeneratedInfo(
      string Name,
      Type ReturnType,
      bool IsAsync,
-     Attribute[] Attributes,
+     //Attribute[] Attributes,
      ParameterGeneratedInfo[] Parameters
 );
 
 public record ParameterGeneratedInfo(
      string Name,
      Type Type,
-     Attribute[] Attributes,
+     //Attribute[] Attributes,
      bool IsOptional = false,
      object? DefaultValue = null
 );
