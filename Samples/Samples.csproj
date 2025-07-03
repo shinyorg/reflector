@@ -5,6 +5,7 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <MyCustomVar>Hello World</MyCustomVar>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,4 +15,15 @@
         <ProjectReference Include="..\Shiny.Reflector\Shiny.Reflector.csproj" />
     </ItemGroup>
     
+    <ItemGroup>
+        <ReflectorItem Include="MyReflectorItem" 
+                       Value="This is a sample value" 
+                       Visible="false" />
+        
+        <ReflectorItem Include="PropertyGroupMyCustomVar" 
+                       Value="$(MyCustomVar)" 
+                       Visible="false" />
+    </ItemGroup>
+
+    <Import Project="..\Shiny.Reflector\build\Shiny.Reflector.SourceGenerators.props" />
 </Project>

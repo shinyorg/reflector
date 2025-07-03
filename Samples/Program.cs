@@ -39,4 +39,9 @@ reflector["name"] = "Something Else";
 Console.WriteLine("Reflector Name Value: " + reflector["NaMe"]);
 Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
 
+
+
+// ASSEMBLY INFO STUFF
+Console.WriteLine("Target Framework: " + AssemblyInfo.TargetFramework);
+Console.WriteLine("My Custom Var: " + AssemblyInfo.PropertyGroupMyCustomVar);
 Console.ReadLine();

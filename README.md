@@ -4,6 +4,8 @@ Reflection without the actual... reflection.  AOT compliant!
 
 ## Usage
 
+### Internal Class "Reflection"
+
 Using the following attribute and marking your class as partial
 ```csharp
 [Shiny.Reflector.ReflectorAttribute]
@@ -50,23 +52,59 @@ Console.WriteLine("Reflector Name Value: " + reflector["NaMe"]);
 Console.WriteLine("Reflector Age Value: " + reflector["NaMe"]);
 ```
 
-## Setup
-1. Install the NuGet package <a href="https://www.nuget.org/packages/Shiny.Reflector" target="_blank"><img src="https://img.shields.io/nuget/v/Shiny.Reflector?style=for-the-badge" /></a>
-2. Add the following [Reflector] attribute to your class and make sure it is marked as partial:
-    ```csharp
-    [Shiny.Reflector.ReflectorAttribute]
-    public partial class MyClass { ... }
-    ```
-3. You can now use `GetReflector()` (available on all objects) to get a reflector for that class (falls back to reflection if the reflector is not available):
-    ```csharp
-    var reflector = myClass.GetReflector();
-    ```
+### Assembly Info Generation
 
-## Using Reflector with the MVVM Community Toolkit
+You can also generate assembly information for your project by adding the following attribute to your `AssemblyInfo.cs` file:
 
-If you are using the [Community Toolkit MVVM](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/) and more specifically, the source generation that it uses. You need to do the following Reflector detects your properties.
+In your project file, you can add the following property to enable the generation of assembly info:
+```xml
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <MyCustomVar>Hello World</MyCustomVar>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <ReflectorItem Include="MyReflectorItem" 
+                       Value="This is a sample value" 
+                       Visible="false" />
+        
+        <!--capture a build variable that we don't look for-->
+        <ReflectorItem Include="PropertyGroupMyCustomVar" 
+                       Value="$(MyCustomVar)" 
+                       Visible="false" />
+    </ItemGroup>
+</Project>
+```
 
-In your `csproj` file, add the following:
+And a new AssemblyInfo static class with constants will be generated for you (NOTE: it grabbed defaulted variables like `Company`, `Version`, etc. from the project file):
+
+```csharp
+public static class AssemblyInfo
+{
+    public const string Company = "Samples";
+    public const string Version = "1.0.0";
+    public const string TargetFramework = "net9.0";
+    public const string TargetFrameworkVersion = "v9.0";
+    public const string Platform = "AnyCPU";
+    public const string MyReflectorItem = "This is a sample value";
+    public const string PropertyGroupMyCustomVar = "Hello World";
+}
+
+```
+
+and now you can do easy things like this:
+
+```csharp
+Console.WriteLine("Target Framework: " + AssemblyInfo.TargetFramework);
+Console.WriteLine("My Custom Var: " + AssemblyInfo.PropertyGroupMyCustomVar);
+```
+
+## Using Reflector with MVVM Community Toolkit
+
+If you are using the Community Toolkit MVVM and more specifically, the source generation that it uses. You need to do the following Reflector detects your properties.
+
+In your csproj file, add the following:
 ```xml
 <PropertyGroup>
     <LangVersion>preview</LangVersion>
