@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -342,6 +343,226 @@ public class ReflectorSourceGeneratorTests
         return Verify(Generate(source, properties));
     }
 
+    [Fact]
+    public Task GeneratesReflectorForClassWithAttributes()
+    {
+        var source = """
+            using System;
+            using System.ComponentModel;
+            using System.ComponentModel.DataAnnotations;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Obsolete("This class is deprecated")]
+                [Description("Test class description")]
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForClassWithCustomAttribute()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [CustomTest(42, Name = "Test Name", IsEnabled = true)]
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+
+                public class CustomTestAttribute : Attribute
+                {
+                    public CustomTestAttribute(int id)
+                    {
+                        Id = id;
+                    }
+
+                    public int Id { get; }
+                    public string? Name { get; set; }
+                    public bool IsEnabled { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForClassWithDisplayAttribute()
+    {
+        var source = """
+            using System;
+            using System.ComponentModel.DataAnnotations;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Display(Name = "User Information", Description = "Contains user details")]
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForClassWithNoAttributes()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForClassWithAttributesWithDifferentValueTypes()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [ComplexTest(IntValue = 123, BoolValue = true, DoubleValue = 45.67, StringValue = "test")]
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+
+                public class ComplexTestAttribute : Attribute
+                {
+                    public int IntValue { get; set; }
+                    public bool BoolValue { get; set; }
+                    public double DoubleValue { get; set; }
+                    public string? StringValue { get; set; }
+                    public float FloatValue { get; set; }
+                    public decimal DecimalValue { get; set; }
+                    public char CharValue { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForRecordWithAttributes()
+    {
+        var source = """
+            using System;
+            using System.ComponentModel;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Obsolete]
+                [Description("Test record")]
+                [Reflector]
+                public partial record TestRecord(string Name, int Age)
+                {
+                    public double Value { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForClassWithAttributeWithConstructorArguments()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [TestWithConstructor("message", 42)]
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                }
+
+                public class TestWithConstructorAttribute : Attribute
+                {
+                    public TestWithConstructorAttribute(string message, int number)
+                    {
+                        Message = message;
+                        Number = number;
+                    }
+
+                    public string Message { get; }
+                    public int Number { get; }
+                    public bool IsActive { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
+    public Task GeneratesReflectorForClassWithAttributeWithNullValues()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [TestWithNulls(Name = null)]
+                [Reflector]
+                public partial class TestClass
+                {
+                    public string Name { get; set; }
+                }
+
+                public class TestWithNullsAttribute : Attribute
+                {
+                    public string? Name { get; set; }
+                    public int? OptionalNumber { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
     GeneratorDriverRunResult Generate(string source, Dictionary<string, string>? analyzerConfigOptions = null)
     {
         // Parse the source code
@@ -350,6 +571,8 @@ public class ReflectorSourceGeneratorTests
         // Create references including the Shiny.Reflector assembly
         var references = new[]
         {
+            MetadataReference.CreateFromFile(typeof(DescriptionAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(System.ComponentModel.DataAnnotations.DataType).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location), // System.Private.CoreLib
             MetadataReference.CreateFromFile(typeof(Attribute).Assembly.Location), // System.Runtime
             MetadataReference.CreateFromFile(typeof(ReflectorAttribute).Assembly.Location), // Shiny.Reflector

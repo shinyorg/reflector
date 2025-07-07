@@ -48,5 +48,15 @@ public class EmptyClassReflector : global::Shiny.Reflector.IReflectorClass
     {
         this[key] = value;
     }
+
+    public global::Shiny.Reflector.AttributeInfo[] Attributes => new global::Shiny.Reflector.AttributeInfo[]
+    {
+        new global::Shiny.Reflector.AttributeInfo(
+            typeof(Shiny.Reflector.ReflectorAttribute),
+            new global::Shiny.Reflector.AttributeArgumentInfo[]
+            {
+            }
+        )
+    };
 }
 }

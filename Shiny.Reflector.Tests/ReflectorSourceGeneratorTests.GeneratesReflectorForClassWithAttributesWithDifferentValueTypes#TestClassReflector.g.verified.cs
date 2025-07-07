@@ -4,11 +4,11 @@
 
 namespace TestNamespace
 {
-internal class TestClassReflector : global::Shiny.Reflector.IReflectorClass
+public class TestClassReflector : global::Shiny.Reflector.IReflectorClass
 {
     private readonly global::TestNamespace.TestClass _reflectedObject;
 
-    internal TestClassReflector(global::TestNamespace.TestClass reflectedObject)
+    public TestClassReflector(global::TestNamespace.TestClass reflectedObject)
     {
         _reflectedObject = reflectedObject;
     }
@@ -75,6 +75,40 @@ internal class TestClassReflector : global::Shiny.Reflector.IReflectorClass
 
     public global::Shiny.Reflector.AttributeInfo[] Attributes => new global::Shiny.Reflector.AttributeInfo[]
     {
+        new global::Shiny.Reflector.AttributeInfo(
+            typeof(TestNamespace.ComplexTestAttribute),
+            new global::Shiny.Reflector.AttributeArgumentInfo[]
+            {
+                new global::Shiny.Reflector.AttributeArgumentInfo(
+                    typeof(int),
+                    "IntValue",
+                    123,
+                    true,
+                    null
+                ),
+                new global::Shiny.Reflector.AttributeArgumentInfo(
+                    typeof(bool),
+                    "BoolValue",
+                    true,
+                    true,
+                    null
+                ),
+                new global::Shiny.Reflector.AttributeArgumentInfo(
+                    typeof(double),
+                    "DoubleValue",
+                    45.67,
+                    true,
+                    null
+                ),
+                new global::Shiny.Reflector.AttributeArgumentInfo(
+                    typeof(string),
+                    "StringValue",
+                    "test",
+                    true,
+                    null
+                )
+            }
+        ),
         new global::Shiny.Reflector.AttributeInfo(
             typeof(Shiny.Reflector.ReflectorAttribute),
             new global::Shiny.Reflector.AttributeArgumentInfo[]

@@ -14,13 +14,15 @@ public class ClassInfo
     public string Namespace { get; }
     public string FullTypeName { get; }
     public List<PropertyInfo> Properties { get; }
+    public List<AttributeInfo> Attributes { get; }
 
-    public ClassInfo(string className, string namespaceName, string fullTypeName, List<PropertyInfo> properties)
+    public ClassInfo(string className, string namespaceName, string fullTypeName, List<PropertyInfo> properties, List<AttributeInfo> attributes)
     {
         ClassName = className;
         Namespace = namespaceName;
         FullTypeName = fullTypeName;
         Properties = properties;
+        Attributes = attributes;
     }
 }
 
@@ -37,6 +39,40 @@ public class PropertyInfo
         TypeName = typeName;
         TypeForTypeOf = typeForTypeOf;
         HasSetter = hasSetter;
+    }
+}
+
+public class AttributeInfo
+{
+    public string TypeName { get; }
+    public string TypeForTypeOf { get; }
+    public List<AttributeArgumentInfo> Arguments { get; }
+
+    public AttributeInfo(string typeName, string typeForTypeOf, List<AttributeArgumentInfo> arguments)
+    {
+        TypeName = typeName;
+        TypeForTypeOf = typeForTypeOf;
+        Arguments = arguments;
+    }
+}
+
+public class AttributeArgumentInfo
+{
+    public string TypeName { get; }
+    public string TypeForTypeOf { get; }
+    public string Name { get; }
+    public string? ValueExpression { get; }
+    public bool IsOptional { get; }
+    public string? DefaultValueExpression { get; }
+
+    public AttributeArgumentInfo(string typeName, string typeForTypeOf, string name, string? valueExpression, bool isOptional, string? defaultValueExpression)
+    {
+        TypeName = typeName;
+        TypeForTypeOf = typeForTypeOf;
+        Name = name;
+        ValueExpression = valueExpression;
+        IsOptional = isOptional;
+        DefaultValueExpression = defaultValueExpression;
     }
 }
 
@@ -125,11 +161,13 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
                     var namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString() ?? "global";
 
                     var properties = GetProperties(typeSymbol);
+                    var attributes = GetAttributes(typeSymbol);
                     var classInfo = new ClassInfo(
                         typeSymbol.Name, 
                         namespaceName, 
                         typeSymbol.ToDisplayString(),
-                        properties
+                        properties,
+                        attributes
                     );
                     allClasses.Add(classInfo);
 
@@ -195,6 +233,95 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         }
 
         return properties;
+    }
+
+    static List<AttributeInfo> GetAttributes(INamedTypeSymbol typeSymbol)
+    {
+        var attributes = new List<AttributeInfo>();
+
+        foreach (var attributeData in typeSymbol.GetAttributes())
+        {
+            var typeName = attributeData.AttributeClass?.ToDisplayString() ?? "";
+            var typeForTypeOf = typeName.Replace("?", "");
+            var arguments = new List<AttributeArgumentInfo>();
+
+            // Handle constructor arguments
+            if (attributeData.ConstructorArguments.Length > 0)
+            {
+                var constructor = attributeData.AttributeConstructor;
+                if (constructor != null)
+                {
+                    for (int i = 0; i < attributeData.ConstructorArguments.Length; i++)
+                    {
+                        var arg = attributeData.ConstructorArguments[i];
+                        var param = constructor.Parameters[i];
+                        
+                        var argumentTypeName = arg.Type?.ToDisplayString() ?? param.Type.ToDisplayString();
+                        var argumentTypeForTypeOf = argumentTypeName.Replace("?", "");
+                        var argumentName = param.Name;
+                        string? valueExpression = GetValueExpression(arg.Value);
+                        bool isOptional = param.HasExplicitDefaultValue;
+                        string? defaultValueExpression = isOptional ? GetValueExpression(param.ExplicitDefaultValue) : null;
+
+                        arguments.Add(new AttributeArgumentInfo(
+                            argumentTypeName, 
+                            argumentTypeForTypeOf, 
+                            argumentName, 
+                            valueExpression, 
+                            isOptional, 
+                            defaultValueExpression
+                        ));
+                    }
+                }
+            }
+
+            // Handle named arguments
+            foreach (var namedArgument in attributeData.NamedArguments)
+            {
+                var argumentTypeName = namedArgument.Value.Type?.ToDisplayString() ?? "object";
+                var argumentTypeForTypeOf = argumentTypeName.Replace("?", "");
+                var argumentName = namedArgument.Key;
+                string? valueExpression = GetValueExpression(namedArgument.Value.Value);
+                bool isOptional = true; // Named arguments are always optional
+                string? defaultValueExpression = null;
+
+                arguments.Add(new AttributeArgumentInfo(
+                    argumentTypeName, 
+                    argumentTypeForTypeOf, 
+                    argumentName, 
+                    valueExpression, 
+                    isOptional, 
+                    defaultValueExpression
+                ));
+            }
+
+            attributes.Add(new AttributeInfo(typeName, typeForTypeOf, arguments));
+        }
+
+        return attributes;
+    }
+
+    static string? GetValueExpression(object? value)
+    {
+        return value switch
+        {
+            null => "null",
+            bool boolValue => boolValue ? "true" : "false",
+            byte byteValue => byteValue.ToString(),
+            sbyte sbyteValue => sbyteValue.ToString(),
+            short shortValue => shortValue.ToString(),
+            ushort ushortValue => ushortValue.ToString(),
+            int intValue => intValue.ToString(),
+            uint uintValue => $"{uintValue}u",
+            long longValue => $"{longValue}L",
+            ulong ulongValue => $"{ulongValue}UL",
+            float floatValue => $"{floatValue}f",
+            double doubleValue => doubleValue.ToString(),
+            decimal decimalValue => $"{decimalValue}m",
+            char charValue => $"'{charValue}'",
+            string stringValue => $"\"{stringValue.Replace("\"", "\\\"")}\"",
+            _ => value?.ToString() ?? "null"
+        };
     }
 
     static void GenerateReflectorClass(SourceProductionContext context, ClassInfo classInfo, string accessorModifier)
@@ -307,6 +434,39 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
         sb.AppendLine("    {");
         sb.AppendLine("        this[key] = value;");
         sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Generate Attributes property
+        sb.AppendLine("    public global::Shiny.Reflector.AttributeInfo[] Attributes => new global::Shiny.Reflector.AttributeInfo[]");
+        sb.AppendLine("    {");
+        for (int i = 0; i < classInfo.Attributes.Count; i++)
+        {
+            var attr = classInfo.Attributes[i];
+            var comma = i < classInfo.Attributes.Count - 1 ? "," : "";
+            
+            sb.AppendLine($"        new global::Shiny.Reflector.AttributeInfo(");
+            sb.AppendLine($"            typeof({attr.TypeForTypeOf}),");
+            sb.AppendLine($"            new global::Shiny.Reflector.AttributeArgumentInfo[]");
+            sb.AppendLine($"            {{");
+            
+            for (int j = 0; j < attr.Arguments.Count; j++)
+            {
+                var arg = attr.Arguments[j];
+                var argComma = j < attr.Arguments.Count - 1 ? "," : "";
+                
+                sb.AppendLine($"                new global::Shiny.Reflector.AttributeArgumentInfo(");
+                sb.AppendLine($"                    typeof({arg.TypeForTypeOf}),");
+                sb.AppendLine($"                    \"{arg.Name}\",");
+                sb.AppendLine($"                    {arg.ValueExpression ?? "null"},");
+                sb.AppendLine($"                    {arg.IsOptional.ToString().ToLower()},");
+                sb.AppendLine($"                    {arg.DefaultValueExpression ?? "null"}");
+                sb.AppendLine($"                ){argComma}");
+            }
+            
+            sb.AppendLine($"            }}");
+            sb.AppendLine($"        ){comma}");
+        }
+        sb.AppendLine("    };");
         sb.AppendLine("}");
 
         if (classInfo.Namespace != "global")

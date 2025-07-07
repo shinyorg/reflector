@@ -17,9 +17,8 @@ public class TestClassReflector : global::Shiny.Reflector.IReflectorClass
 
     public global::Shiny.Reflector.PropertyGeneratedInfo[] Properties => new global::Shiny.Reflector.PropertyGeneratedInfo[]
     {
-        new global::Shiny.Reflector.PropertyGeneratedInfo("Name", typeof(string), false),
-        new global::Shiny.Reflector.PropertyGeneratedInfo("Age", typeof(int), false),
-        new global::Shiny.Reflector.PropertyGeneratedInfo("Value", typeof(double), true)
+        new global::Shiny.Reflector.PropertyGeneratedInfo("Name", typeof(string), true),
+        new global::Shiny.Reflector.PropertyGeneratedInfo("Age", typeof(int), true)
     };
 
     public T? GetValue<T>(string key)
@@ -41,8 +40,6 @@ public class TestClassReflector : global::Shiny.Reflector.IReflectorClass
                     return _reflectedObject.Name;
                 case "age":
                     return _reflectedObject.Age;
-                case "value":
-                    return _reflectedObject.Value;
                 default:
                     throw new global::System.InvalidOperationException($"Cannot get value for key '{key}' in TestClassReflector");
             }
@@ -51,11 +48,18 @@ public class TestClassReflector : global::Shiny.Reflector.IReflectorClass
         {
             switch (key?.ToLower())
             {
-                case "value":
-                    if (value is not null and not double)
-                        throw new global::System.InvalidOperationException($"Cannot set value for key '{key}' in TestClassReflector. Expected a double value.");
+                case "name":
+                    if (value is not null and not string)
+                        throw new global::System.InvalidOperationException($"Cannot set value for key '{key}' in TestClassReflector. Expected a string value.");
 
-                    _reflectedObject.Value = (double)value;
+                    _reflectedObject.Name = (string)value;
+                    break;
+
+                case "age":
+                    if (value is not null and not int)
+                        throw new global::System.InvalidOperationException($"Cannot set value for key '{key}' in TestClassReflector. Expected a int value.");
+
+                    _reflectedObject.Age = (int)value;
                     break;
 
                 default:
@@ -71,6 +75,26 @@ public class TestClassReflector : global::Shiny.Reflector.IReflectorClass
 
     public global::Shiny.Reflector.AttributeInfo[] Attributes => new global::Shiny.Reflector.AttributeInfo[]
     {
+        new global::Shiny.Reflector.AttributeInfo(
+            typeof(System.ComponentModel.DataAnnotations.DisplayAttribute),
+            new global::Shiny.Reflector.AttributeArgumentInfo[]
+            {
+                new global::Shiny.Reflector.AttributeArgumentInfo(
+                    typeof(string),
+                    "Name",
+                    "User Information",
+                    true,
+                    null
+                ),
+                new global::Shiny.Reflector.AttributeArgumentInfo(
+                    typeof(string),
+                    "Description",
+                    "Contains user details",
+                    true,
+                    null
+                )
+            }
+        ),
         new global::Shiny.Reflector.AttributeInfo(
             typeof(Shiny.Reflector.ReflectorAttribute),
             new global::Shiny.Reflector.AttributeArgumentInfo[]
