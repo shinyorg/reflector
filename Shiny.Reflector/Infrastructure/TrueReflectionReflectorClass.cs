@@ -3,30 +3,20 @@ using System.Reflection;
 namespace Shiny.Reflector.Infrastructure;
 
 
-public class TrueReflectionReflectorClass : IReflectorClass
+public class TrueReflectionReflectorClass(object obj) : IReflectorClass
 {
-    readonly ReflectedPropertyGeneratedInfo[] properties;
+    public object ReflectedObject => obj;
+
+
+    ReflectedPropertyGeneratedInfo[]? props;
+    PropertyGeneratedInfo[] RefProps => this.props ??= this.ReflectedObject
+        .GetType()
+        .GetProperties()
+        .Where(x => x.GetMethod != null)
+        .Select(x => new ReflectedPropertyGeneratedInfo(x))
+        .ToArray();
     
-    
-    public TrueReflectionReflectorClass(object obj)
-    {
-        this.ReflectedObject = obj;
-        
-        this.properties = obj
-            .GetType()
-            .GetProperties()
-            .Where(x => x.GetMethod != null)
-            .Select(x => new ReflectedPropertyGeneratedInfo(x))
-            .ToArray();
-        
-        //obj.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-        //    .Where(m => m.IsSpecialName && (m.Name.StartsWith("get_") || m.Name.StartsWith("set_")))
-        //    .ToList();
-    }
-    
-    
-    public object ReflectedObject { get; }
-    public PropertyGeneratedInfo[] Properties => this.properties.Cast<PropertyGeneratedInfo>().ToArray();
+    public PropertyGeneratedInfo[] Properties => this.RefProps.ToArray();
     
     public T? GetValue<T>(string key)
         => this[key] is T value ? value : default;
@@ -38,7 +28,10 @@ public class TrueReflectionReflectorClass : IReflectorClass
     {
         get
         {
-            var prop = this.properties.FirstOrDefault(x => x.Name.Equals(key, StringComparison.InvariantCultureIgnoreCase));
+            var prop = this.RefProps
+                .Cast<ReflectedPropertyGeneratedInfo>()
+                .FirstOrDefault(x => x.Name.Equals(key, StringComparison.InvariantCultureIgnoreCase));
+            
             if (prop == null)
                 throw new ArgumentException($"Property '{key}' not found on {this.ReflectedObject.GetType().Name}");
             
@@ -47,7 +40,10 @@ public class TrueReflectionReflectorClass : IReflectorClass
         }
         set
         {
-            var prop = this.properties.FirstOrDefault(x => x.Name.Equals(key, StringComparison.InvariantCultureIgnoreCase));
+            var prop = this.RefProps
+                .Cast<ReflectedPropertyGeneratedInfo>()
+                .FirstOrDefault(x => x.Name.Equals(key, StringComparison.InvariantCultureIgnoreCase));
+            
             if (prop == null)
                 throw new ArgumentException($"Property '{key}' not found on {this.ReflectedObject.GetType().Name}");
             
