@@ -18,5 +18,5 @@
                           ReferenceOutputAssembly="False" />
     </ItemGroup>
 
-    <Import Project="..\Shiny.Reflector\build\Shiny.Reflector.SourceGenerators.props" />
+    <Import Project="..\Shiny.Reflector\build\Package.targets" />
 </Project>
