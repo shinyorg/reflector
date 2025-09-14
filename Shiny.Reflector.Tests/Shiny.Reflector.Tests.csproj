@@ -7,7 +7,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Shouldly" Version="4.3.0" />
+        <PackageReference Include="GitHubActionsTestLogger" Version="2.4.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Shouldly" Version="4.3.0"/>
         <PackageReference Include="Verify.Xunit" Version="30.4.0"/>
         <PackageReference Include="Verify.SourceGenerators" Version="2.5.0"/>
         <PackageReference Include="xunit" Version="2.9.3"/>
@@ -22,7 +26,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Shiny.Reflector.SourceGenerators\Shiny.Reflector.SourceGenerators.csproj"
-                          OutputItemType="Analyzer" />
+                          OutputItemType="Analyzer"/>
         <ProjectReference Include="..\Shiny.Reflector\Shiny.Reflector.csproj"/>
     </ItemGroup>
 

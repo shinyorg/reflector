@@ -11,6 +11,7 @@
     <File Path=".github\workflows\build.yml" />
   </Folder>
   <Project Path="Samples\Samples.csproj" Type="Classic C#" />
+  <Project Path="Shiny.Reflector.Benchmarks\Shiny.Reflector.Benchmarks.csproj" Type="Classic C#" />
   <Project Path="Shiny.Reflector.SourceGenerators\Shiny.Reflector.SourceGenerators.csproj" Type="Classic C#" />
   <Project Path="Shiny.Reflector.Tests\Shiny.Reflector.Tests.csproj" Type="Classic C#" />
   <Project Path="Shiny.Reflector\Shiny.Reflector.csproj" Type="Classic C#" />

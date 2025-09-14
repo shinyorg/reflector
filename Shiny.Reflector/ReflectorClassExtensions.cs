@@ -140,29 +140,30 @@ public static class ReflectorClassExtensions
     }
 
 
-    // /// <summary>
-    // /// Converts the properties of the reflector class to a dictionary.
-    // /// </summary>
-    // /// <param name="this"></param>
-    // /// <param name="deepFallbackCanUseReflection">If true, will use reflection to get properties that are not directly accessible.</param>
-    // /// <returns></returns>
-    // public static IDictionary<string, object> ToDictionary(
-    //     this IReflectorClass @this,
-    //     bool deepFallbackCanUseReflection = false
-    // )
-    // {
-    //     var dict = new Dictionary<string, object>();
-    //     foreach (var prop in @this.Properties)
-    //     {
-    //         var value = @this[prop.Name];
-    //         if (value != null)
-    //         {
-    //             dict.Add(prop.Name, ConvertValueToDictionary(value, prop.Type, deepFallbackCanUseReflection));
-    //         }
-    //     }
-    //
-    //     return dict;
-    // }
+    /// <summary>
+    /// Converts the properties of the reflector class to a dictionary.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="deepFallbackCanUseReflection">If true, will use reflection to get properties that are not directly accessible.</param>
+    /// <returns></returns>
+    public static IDictionary<string, object> ToDictionary(
+        this IReflectorClass @this,
+        bool deepFallbackCanUseReflection = false
+    )
+    {
+        var dict = new Dictionary<string, object>();
+        foreach (var prop in @this.Properties)
+        {
+            var value = @this[prop.Name];
+            if (value != null)
+            {
+                
+                //dict.Add(prop.Name, ConvertValueToDictionary(value, prop.Type, deepFallbackCanUseReflection));
+            }
+        }
+    
+        return dict;
+    }
     //
     // static object ConvertValueToDictionary(object value, Type propertyType, bool deepFallbackCanUseReflection)
     // {
@@ -276,36 +277,16 @@ public static class ReflectorClassExtensions
     // }
     //
     //
-    // static bool IsSimpleType(Type type)
-    // {
-    //     // Handle nullable types
-    //     var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
-    //     
-    //     return underlyingType.IsPrimitive ||
-    //            underlyingType == typeof(string) ||
-    //            underlyingType == typeof(int) ||
-    //            underlyingType == typeof(byte) ||
-    //            underlyingType == typeof(short) ||
-    //            underlyingType == typeof(double) ||
-    //            underlyingType == typeof(float) ||
-    //            underlyingType == typeof(decimal) ||
-    //            underlyingType == typeof(DateOnly) ||
-    //            underlyingType == typeof(TimeOnly) ||
-    //            underlyingType == typeof(DateTime) ||
-    //            underlyingType == typeof(DateTimeOffset) ||
-    //            underlyingType == typeof(TimeSpan) ||
-    //            underlyingType == typeof(Guid) ||
-    //            underlyingType.IsEnum;
-    // }
+
     //
     //
-    // /// <summary>
-    // /// Sets the properties of the reflector class from a dictionary.
-    // /// </summary>
-    // /// <param name="this"></param>
-    // /// <param name="dictionary"></param>
-    // /// <param name="deepFallbackCanUseReflection">If true, will use reflection to set properties that are not directly accessible.</param>
-    // /// <exception cref="ArgumentNullException"></exception>
+    /// <summary>
+    /// Sets the properties of the reflector class from a dictionary.
+    /// </summary>
+    /// <param name="this"></param>
+    /// <param name="dictionary"></param>
+    /// <param name="deepFallbackCanUseReflection">If true, will use reflection to set properties that are not directly accessible.</param>
+    /// <exception cref="ArgumentNullException"></exception>
     // public static void SetObjectFromDictionary(
     //     this IReflectorClass @this, 
     //     IDictionary<string, object> dictionary,
@@ -320,19 +301,27 @@ public static class ReflectorClassExtensions
     //         var prop = @this.TryGetPropertyInfo(kvp.Key);
     //         if (prop is { HasSetter: true })
     //         {
-    //             var convertedValue = ConvertValueFromDictionary(kvp.Value, prop.Type, deepFallbackCanUseReflection);
-    //             if (convertedValue != null && prop.Type.IsInstanceOfType(convertedValue))
+    //             if (prop.Type.IsSimpleType())
     //             {
-    //                 @this[kvp.Key] = convertedValue;
+    //                 // TODO: just sit it on the property
     //             }
-    //             else if (convertedValue == null && !prop.Type.IsValueType)
+    //             else
     //             {
-    //                 @this[kvp.Key] = null;
+    //                 // TODO: check if ienumerable or object - Ienumerable will need to be unpacked
     //             }
+    //             // var convertedValue = ConvertValueFromDictionary(kvp.Value, prop.Type, deepFallbackCanUseReflection);
+    //             // if (convertedValue != null && prop.Type.IsInstanceOfType(convertedValue))
+    //             // {
+    //             //     @this[kvp.Key] = convertedValue;
+    //             // }
+    //             // else if (convertedValue == null && !prop.Type.IsValueType)
+    //             // {
+    //             //     @this[kvp.Key] = null;
+    //             // }
     //         }
     //     }
     // }
-    //
+    
     // static object? ConvertValueFromDictionary(object value, Type targetType, bool deepFallbackCanUseReflection)
     // {
     //     if (value == null)

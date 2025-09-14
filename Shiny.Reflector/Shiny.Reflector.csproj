@@ -23,20 +23,20 @@
         <None Include="..\nuget.png" Pack="true" PackagePath="icon.png"/>
         <None Include="..\readme.md" Pack="true" PackagePath="\"/>
         
-        <None Include="build\Shiny.Reflector.SourceGenerators.props"
-              PackagePath="build\Shiny.Reflector.SourceGenerators.props"
+        <None Include="build\Package.targets" 
+              PackagePath="build\Shiny.Reflector.SourceGenerators.targets" 
               Pack="true" />
 
-        <None Include="build\Shiny.Reflector.SourceGenerators.props"
-              PackagePath="build\Shiny.Reflector.props"
+        <None Include="build\Package.targets"
+              PackagePath="build\Shiny.Reflector.targets"
               Pack="true"/>
         
-        <None Include="build\Shiny.Reflector.SourceGenerators.props" 
-              PackagePath="buildTransitive\Shiny.Reflector.SourceGenerators.props" 
+        <None Include="build\Package.targets" 
+              PackagePath="buildTransitive\Shiny.Reflector.SourceGenerators.targets" 
               Pack="true" />
         
-        <None Include="build\Shiny.Reflector.SourceGenerators.props"
-              PackagePath="buildTransitive\Shiny.Reflector.props"
+        <None Include="build\Package.targets"
+              PackagePath="buildTransitive\Shiny.Reflector.targets"
               Pack="true"/>
       
         <None Include="..\Shiny.Reflector.SourceGenerators\bin\Release\netstandard2.0\Shiny.Reflector.SourceGenerators.dll"
