@@ -43,9 +43,19 @@ public class PropertyInfo
 [Generator(LanguageNames.CSharp)]
 public class ReflectorSourceGenerator : IIncrementalGenerator
 {
+    private static readonly DiagnosticDescriptor MissingPartialModifierRule = new DiagnosticDescriptor(
+        id: "SHINYREFL001",
+        title: "Type must be partial",
+        messageFormat: "Type '{0}' must be declared as partial to use the [Reflector] attribute",
+        category: "Shiny.Reflector",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description: "Types marked with [Reflector] attribute must be declared as partial to allow source generation."
+    );
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Find all partial classes marked with ReflectorAttribute
+        // Find all classes/records marked with ReflectorAttribute (partial or not)
         var classDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
@@ -71,12 +81,8 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
     }
 
     static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-        => (node is ClassDeclarationSyntax cls && 
-            cls.AttributeLists.Count > 0 && 
-            cls.Modifiers.Any(SyntaxKind.PartialKeyword)) ||
-           (node is RecordDeclarationSyntax rec && 
-            rec.AttributeLists.Count > 0 && 
-            rec.Modifiers.Any(SyntaxKind.PartialKeyword));
+        => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 } ||
+           node is RecordDeclarationSyntax { AttributeLists.Count: > 0 };
 
     static TypeDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
@@ -117,8 +123,28 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
             foreach (var typeDeclaration in distinctTypes)
             {
+                // Check if the type is partial
+                var isPartial = typeDeclaration!.Modifiers.Any(SyntaxKind.PartialKeyword);
+                
                 var semanticModel = compilation.GetSemanticModel(typeDeclaration.SyntaxTree);
                 var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
+                
+                if (!isPartial)
+                {
+                    // Report diagnostic for missing partial modifier
+                    if (typeSymbol != null)
+                    {
+                        var diagnostic = Diagnostic.Create(
+                            MissingPartialModifierRule,
+                            typeDeclaration.Identifier.GetLocation(),
+                            typeSymbol.Name
+                        );
+                        context.ReportDiagnostic(diagnostic);
+                    }
+                    
+                    // Skip source generation for this type
+                    continue;
+                }
 
                 if (typeSymbol != null)
                 {
