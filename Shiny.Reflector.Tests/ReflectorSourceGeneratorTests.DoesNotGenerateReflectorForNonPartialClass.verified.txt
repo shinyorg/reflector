@@ -1,0 +1,24 @@
+{
+  Diagnostics: [
+    {
+      Location: /*
+    [Reflector]
+    public class TestClass
+                 ^^^^^^^^^
+    {
+*/
+ : (6,17)-(6,26),
+      Message: Type 'TestClass' must be declared as partial to use the [Reflector] attribute,
+      Severity: Error,
+      Descriptor: {
+        Id: SHINYREFL001,
+        Title: Type must be partial,
+        Description: Types marked with [Reflector] attribute must be declared as partial to allow source generation.,
+        MessageFormat: Type '{0}' must be declared as partial to use the [Reflector] attribute,
+        Category: Shiny.Reflector,
+        DefaultSeverity: Error,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}
