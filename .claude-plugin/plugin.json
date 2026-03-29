@@ -1,0 +1,26 @@
+{
+  "name": "shiny-reflector",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for Shiny Reflector - a high-performance reflection library using C# source generators for AOT-compliant, zero-allocation property access",
+  "author": {
+    "name": "Shiny",
+    "email": "hello@shinylib.net",
+    "url": "https://shinylib.net"
+  },
+  "homepage": "https://github.com/shinyorg/reflector",
+  "repository": "https://github.com/shinyorg/reflector",
+  "license": "MIT",
+  "keywords": [
+    "dotnet",
+    "reflection",
+    "source-generators",
+    "aot",
+    "performance",
+    "property-access",
+    "json-serialization",
+    "assembly-info",
+    "csharp",
+    "code-generation"
+  ],
+  "skills": "./skills/"
+}

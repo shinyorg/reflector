@@ -108,6 +108,22 @@ public class ReflectorClassExtensionsTests
     }
 
 
+    [Fact]
+    public void StaticProperties_AreExcluded()
+    {
+        var cls = new ClassWithStaticProperties { Name = "Test", Age = 25 };
+        var reflector = cls.GetReflector()!;
+
+        reflector.Properties.Length.ShouldBe(2);
+        reflector.Properties.ShouldAllBe(p => p.Name == "Name" || p.Name == "Age");
+
+        reflector.HasProperty("Name").ShouldBeTrue();
+        reflector.HasProperty("Age").ShouldBeTrue();
+
+        Should.Throw<InvalidOperationException>(() => reflector["StaticValue"]);
+        Should.Throw<InvalidOperationException>(() => reflector["StaticName"]);
+    }
+
     // [Fact]
     // public Task GetDictionary_SetDictionary()
     // {
@@ -170,4 +186,13 @@ public partial class ThirdClass
 public partial class FourthClass
 {
     public int Value { get; set; }
+}
+
+[Reflector]
+public partial class ClassWithStaticProperties
+{
+    public static string StaticName { get; set; } = "Default";
+    public static int StaticValue { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
 }
