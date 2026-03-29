@@ -317,6 +317,29 @@ public class ReflectorSourceGeneratorTests
     }
 
     [Fact]
+    public Task ExcludesStaticPropertiesFromReflector()
+    {
+        var source = """
+            using System;
+            using Shiny.Reflector;
+
+            namespace TestNamespace
+            {
+                [Reflector]
+                public partial class TestClass
+                {
+                    public static string StaticName { get; set; }
+                    public static int StaticCount { get; set; }
+                    public string Name { get; set; }
+                    public int Age { get; set; }
+                }
+            }
+            """;
+
+        return Verify(Generate(source));
+    }
+
+    [Fact]
     public Task GeneratesReflectorWithPublicAccessorsWhenPropertyIsEmpty()
     {
         var source = """

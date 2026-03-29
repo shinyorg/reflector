@@ -191,7 +191,7 @@ public class ReflectorSourceGenerator : IIncrementalGenerator
 
         foreach (var member in typeSymbol.GetMembers())
         {
-            if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public } property)
+            if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsStatic: false } property)
             {
                 // For records, primary constructor parameters are readonly by default
                 // We can identify them by checking if they are auto-implemented properties
