@@ -1,6 +1,6 @@
-MOVED TO [https://github.com/shinyorg/extensions]
+# MOVED TO [https://github.com/shinyorg/extensions]
 
-# Shiny Reflector
+Shiny Reflector
 
 Reflection is awesome and super powerful, but also very slow and non-AOT compliant. Using source generators, we look to solve some of those pain points.
 This library gives you the power of reflection... without the actual reflection!
